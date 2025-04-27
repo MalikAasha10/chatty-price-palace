@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -7,10 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Trash2, Plus, Minus, ChevronRight, ShoppingBag, Credit, Lock, Shield } from 'lucide-react';
+import { Trash2, Plus, Minus, ChevronRight, ShoppingBag, CreditCard, Lock, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 
-// Sample cart items
 interface CartItem {
   id: number;
   productId: number;
@@ -98,13 +96,11 @@ const CartPage = () => {
     
     setIsApplyingCoupon(true);
     
-    // Simulate API call
     setTimeout(() => {
       setIsApplyingCoupon(false);
       
       if (couponCode.toUpperCase() === 'DISCOUNT20') {
         toast.success('Coupon applied successfully!');
-        // In a real app, this would update the pricing
       } else {
         toast.error('Invalid coupon code');
       }
@@ -131,14 +127,12 @@ const CartPage = () => {
           
           {cartItems.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Cart Items */}
               <div className="lg:col-span-2">
                 <Card className="bg-white mb-6 overflow-hidden">
                   {cartItems.map((item, index) => (
                     <div key={item.id}>
                       <div className="p-4 md:p-6">
                         <div className="flex flex-col md:flex-row">
-                          {/* Product Image */}
                           <div className="w-full md:w-32 h-32 mb-4 md:mb-0 flex-shrink-0">
                             <img 
                               src={item.image} 
@@ -147,7 +141,6 @@ const CartPage = () => {
                             />
                           </div>
                           
-                          {/* Product Details */}
                           <div className="flex-grow md:ml-4">
                             <div className="flex flex-col md:flex-row justify-between">
                               <div>
@@ -224,7 +217,6 @@ const CartPage = () => {
                 </div>
               </div>
               
-              {/* Order Summary */}
               <div className="lg:col-span-1">
                 <Card className="bg-white overflow-hidden">
                   <div className="p-6">
@@ -256,7 +248,6 @@ const CartPage = () => {
                       </div>
                     </div>
                     
-                    {/* Coupon Code */}
                     <div className="mb-6">
                       <p className="text-sm font-medium mb-2">Apply Coupon Code</p>
                       <div className="flex">
@@ -291,7 +282,7 @@ const CartPage = () => {
                         <span>Free returns within 30 days</span>
                       </div>
                       <div className="flex items-center text-gray-600">
-                        <Credit className="h-4 w-4 mr-2" />
+                        <CreditCard className="h-4 w-4 mr-2" />
                         <span>We accept major credit cards</span>
                       </div>
                     </div>
