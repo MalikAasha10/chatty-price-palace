@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,24 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// Custom e-commerce colors
+				'brand': {
+					50: '#e6f7ff',
+					100: '#b3e0ff',
+					200: '#80caff',
+					300: '#4db3ff',
+					400: '#1a9dff',
+					500: '#0088e6',
+					600: '#0066b3',
+					700: '#004480',
+					800: '#00224d',
+					900: '#00091a',
+				},
+				'bargain': {
+					light: '#4ade80', // Success green
+					dark: '#ef4444',  // Reject red
+				},
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -84,11 +102,21 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'pulse-light': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.7' },
+				},
+				'slide-up': {
+					'0%': { transform: 'translateY(10px)', opacity: '0' },
+					'100%': { transform: 'translateY(0)', opacity: '1' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-light': 'pulse-light 2s ease-in-out infinite',
+				'slide-up': 'slide-up 0.3s ease-out'
 			}
 		}
 	},
