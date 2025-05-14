@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -54,7 +53,7 @@ const Navbar = () => {
             <Link to="/deals" className="text-gray-700 hover:text-brand-500 transition-colors">
               Deals
             </Link>
-            
+
             {isLoggedIn ? (
               <>
                 <Link to="/profile">
@@ -149,7 +148,7 @@ const Navbar = () => {
                 </Link>
               </div>
             )}
-            
+
             <Link to="/cart" className="flex items-center justify-between py-2 border-b border-gray-100">
               <span className="text-gray-700">Shopping Cart</span>
               <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">

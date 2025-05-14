@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -142,6 +141,7 @@ const bestDeals = [
 ];
 
 // Featured categories
+// Featured categories with links to categories page
 const categories = [
   { id: 1, name: 'Electronics', icon: '🔌', color: 'bg-blue-100 text-blue-800' },
   { id: 2, name: 'Fashion', icon: '👕', color: 'bg-pink-100 text-pink-800' },
@@ -190,7 +190,7 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      
+
       <main className="flex-grow">
         {/* Hero Section */}
         <section className="relative">
@@ -201,7 +201,7 @@ const Index = () => {
               className="absolute inset-0 bg-cover bg-center opacity-30 transition-opacity duration-1000"
               style={{ backgroundImage: `url(${currentBanner.bgImage})` }}
             ></div>
-            
+
             <div className="container mx-auto px-4 h-full flex items-center">
               <div className="max-w-xl text-white space-y-6 animate-slide-up">
                 <div>
@@ -218,7 +218,7 @@ const Index = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Dots for hero banner */}
             <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-2">
               {heroBanners.map((banner, index) => (
@@ -234,17 +234,18 @@ const Index = () => {
             </div>
           </div>
         </section>
-        
+
         {/* Categories Section */}
         <section className="py-12 bg-gray-50">
           <div className="container mx-auto px-4">
             <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center">Shop by Category</h2>
-            
+
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {categories.map(category => (
                 <Link 
                   key={category.id}
-                  to={`/categories/${category.id}`}
+                  to={`/categories`}
+                  state={{ selectedCategory: category.name }}
                   className="flex flex-col items-center p-4 rounded-lg transition-all hover:shadow-md"
                 >
                   <div className={`text-4xl p-4 rounded-full mb-3 ${category.color}`}>
@@ -254,9 +255,17 @@ const Index = () => {
                 </Link>
               ))}
             </div>
+            
+            <div className="mt-8 text-center">
+              <Link to="/categories">
+                <Button variant="outline">
+                  View All Categories <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
           </div>
         </section>
-        
+
         {/* How It Works Section */}
         <section className="py-16 bg-white">
           <div className="container mx-auto px-4 text-center">
@@ -264,7 +273,7 @@ const Index = () => {
             <p className="text-gray-600 max-w-3xl mx-auto mb-12">
               Enjoy a unique shopping experience where you can negotiate prices directly with sellers in real-time.
             </p>
-            
+
             <div className="grid md:grid-cols-3 gap-8">
               <div className="flex flex-col items-center p-6">
                 <div className="h-16 w-16 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center mb-4">
@@ -273,7 +282,7 @@ const Index = () => {
                 <h3 className="text-xl font-semibold mb-3">Find Products</h3>
                 <p className="text-gray-600">Browse multiple sellers offering the same product with different prices.</p>
               </div>
-              
+
               <div className="flex flex-col items-center p-6">
                 <div className="h-16 w-16 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center mb-4">
                   <Calendar className="h-8 w-8" />
@@ -281,7 +290,7 @@ const Index = () => {
                 <h3 className="text-xl font-semibold mb-3">Bargain in Real-time</h3>
                 <p className="text-gray-600">Negotiate directly with sellers through our real-time chat system.</p>
               </div>
-              
+
               <div className="flex flex-col items-center p-6">
                 <div className="h-16 w-16 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center mb-4">
                   <Zap className="h-8 w-8" />
@@ -290,7 +299,7 @@ const Index = () => {
                 <p className="text-gray-600">Compare offers, accept the best price, and complete your purchase.</p>
               </div>
             </div>
-            
+
             <div className="mt-10">
               <Button className="bg-brand-500 hover:bg-brand-600">
                 Learn More About BargainBay
@@ -298,7 +307,7 @@ const Index = () => {
             </div>
           </div>
         </section>
-        
+
         {/* Featured Products */}
         <section className="py-16 bg-gray-50">
           <div className="container mx-auto px-4">
@@ -315,7 +324,7 @@ const Index = () => {
                 <TabsTrigger value="new">New Arrivals</TabsTrigger>
                 <TabsTrigger value="deals">Best Deals</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="featured">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   {featuredProducts.map((product) => (
@@ -323,7 +332,7 @@ const Index = () => {
                   ))}
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="new">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   {newArrivals.map((product) => (
@@ -331,7 +340,7 @@ const Index = () => {
                   ))}
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="deals">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   {bestDeals.map((product) => (
@@ -342,7 +351,7 @@ const Index = () => {
             </Tabs>
           </div>
         </section>
-        
+
         {/* Call to Action */}
         <section className="py-12 bg-brand-600 text-white">
           <div className="container mx-auto px-4 text-center">
@@ -365,7 +374,7 @@ const Index = () => {
           </div>
         </section>
       </main>
-      
+
       <Footer />
     </div>
   );

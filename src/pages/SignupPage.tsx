@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,15 +9,26 @@ import { toast } from 'sonner';
 import { UserPlus } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import axios from 'axios';
+
+type UserRole = "user" | "seller";
 
 const SignupPage = () => {
+  const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    businessName: '',
+    businessAddress: '',
+    taxId: ''
   });
+  
+  const [role, setRole] = useState<UserRole>("user");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -32,7 +42,12 @@ const SignupPage = () => {
   
   const validateForm = () => {
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.confirmPassword) {
-      toast.error('Please fill out all fields');
+      toast.error('Please fill out all required fields');
+      return false;
+    }
+    
+    if (role === 'seller' && (!formData.businessName || !formData.businessAddress)) {
+      toast.error('Please fill out all required business information');
       return false;
     }
     
@@ -59,13 +74,52 @@ const SignupPage = () => {
     setIsLoading(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      toast.success('Account created successfully!');
+      // Prepare data for API request
+      const userData = {
+        name: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        password: formData.password
+      };
+
+      let response;
       
-      // Redirect would happen here in a real app
+      // Send request based on role
+      if (role === 'seller') {
+        const sellerData = {
+          ...userData,
+          storeName: formData.businessName
+        };
+        
+        response = await axios.post('http://localhost:5000/api/auth/seller/register', sellerData);
+      } else {
+        response = await axios.post('http://localhost:5000/api/auth/user/register', userData);
+      }
       
-    } catch (error) {
-      toast.error('Failed to create account. Please try again.');
+      // Handle successful registration
+      if (response.data.success) {
+        // Store token in localStorage
+        localStorage.setItem('token', response.data.token);
+        
+        // Store user info
+        if (role === 'seller') {
+          localStorage.setItem('seller', JSON.stringify(response.data.seller));
+        } else {
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+        }
+        
+        toast.success('Account created successfully!');
+        
+        // Redirect based on role
+        if (role === 'seller') {
+          navigate('/seller-dashboard');
+        } else {
+          navigate('/user-dashboard');
+        }
+      }
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to create account. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -87,9 +141,29 @@ const SignupPage = () => {
           
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
+              {/* Role Selection */}
+              <div className="space-y-2">
+                <Label>I am signing up as a:</Label>
+                <RadioGroup 
+                  defaultValue="user" 
+                  className="flex gap-4"
+                  value={role}
+                  onValueChange={(value) => setRole(value as UserRole)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="user" id="user-role" />
+                    <Label htmlFor="user-role" className="cursor-pointer">User</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="seller" id="seller-role" />
+                    <Label htmlFor="seller-role" className="cursor-pointer">Seller</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+              
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
+                  <Label htmlFor="firstName">First Name *</Label>
                   <Input
                     id="firstName"
                     name="firstName"
@@ -100,7 +174,7 @@ const SignupPage = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
+                  <Label htmlFor="lastName">Last Name *</Label>
                   <Input
                     id="lastName"
                     name="lastName"
@@ -113,7 +187,7 @@ const SignupPage = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email *</Label>
                 <Input
                   id="email"
                   name="email"
@@ -126,7 +200,7 @@ const SignupPage = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Password *</Label>
                 <Input
                   id="password"
                   name="password"
@@ -139,7 +213,7 @@ const SignupPage = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label htmlFor="confirmPassword">Confirm Password *</Label>
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"
@@ -150,6 +224,46 @@ const SignupPage = () => {
                   required
                 />
               </div>
+              
+              {/* Seller-specific fields */}
+              {role === 'seller' && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="businessName">Business Name *</Label>
+                    <Input
+                      id="businessName"
+                      name="businessName"
+                      placeholder="Your Business Name"
+                      value={formData.businessName}
+                      onChange={handleInputChange}
+                      required={role === 'seller'}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="businessAddress">Business Address *</Label>
+                    <Input
+                      id="businessAddress"
+                      name="businessAddress"
+                      placeholder="123 Business St, City, Country"
+                      value={formData.businessAddress}
+                      onChange={handleInputChange}
+                      required={role === 'seller'}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="taxId">Tax ID (optional)</Label>
+                    <Input
+                      id="taxId"
+                      name="taxId"
+                      placeholder="Your Tax ID"
+                      value={formData.taxId}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </>
+              )}
               
               <div className="flex items-start space-x-2">
                 <Checkbox
