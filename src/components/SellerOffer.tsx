@@ -17,6 +17,7 @@ interface SellerOfferProps {
   deliveryDays: number;
   responseRate: number; // percentage
   isPreferredSeller?: boolean;
+  productId?: string;
 }
 
 const SellerOffer: React.FC<SellerOfferProps> = ({
@@ -29,7 +30,8 @@ const SellerOffer: React.FC<SellerOfferProps> = ({
   fulfillment,
   deliveryDays,
   responseRate,
-  isPreferredSeller = false
+  isPreferredSeller = false,
+  productId = "demo-product-id" // Default fallback for demo
 }) => {
   const [showBargainingChat, setShowBargainingChat] = useState(false);
   const [currentPrice, setCurrentPrice] = useState(initialPrice);
@@ -109,6 +111,7 @@ const SellerOffer: React.FC<SellerOfferProps> = ({
             sellerId={sellerId}
             sellerName={sellerName}
             initialPrice={initialPrice}
+            productId={productId}
             onClose={handleCloseChat}
             onPriceChange={handlePriceChange}
           />

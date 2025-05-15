@@ -27,6 +27,17 @@ const productSchema = new mongoose.Schema({
     ref: 'Seller',
     required: true,
   },
+  allowBargaining: {
+    type: Boolean,
+    default: true,
+  },
+  minAcceptablePrice: {
+    type: Number,
+    default: function() {
+      // Default minimum price is 80% of the listing price
+      return this.price * 0.8;
+    }
+  },
   createdAt: {
     type: Date,
     default: Date.now,
