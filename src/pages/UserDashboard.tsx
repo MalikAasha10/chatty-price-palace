@@ -74,7 +74,13 @@ const UserDashboard = () => {
                 <Button variant="ghost" className="w-full justify-start" asChild>
                   <Link to="/user-dashboard">
                     <User className="mr-2 h-4 w-4" />
-                    Profile
+                    Dashboard
+                  </Link>
+                </Button>
+                <Button variant="ghost" className="w-full justify-start" asChild>
+                  <Link to="/user-profile">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Profile Settings
                   </Link>
                 </Button>
                 <Button variant="ghost" className="w-full justify-start" asChild>
@@ -93,12 +99,6 @@ const UserDashboard = () => {
                   <Link to="/history">
                     <Clock className="mr-2 h-4 w-4" />
                     Browse History
-                  </Link>
-                </Button>
-                <Button variant="ghost" className="w-full justify-start" asChild>
-                  <Link to="/settings">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
                   </Link>
                 </Button>
                 
