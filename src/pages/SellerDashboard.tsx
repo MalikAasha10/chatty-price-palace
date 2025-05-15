@@ -1,3 +1,4 @@
+
 // src/pages/SellerDashboard.tsx
 
 import { Card } from "@/components/ui/card";
@@ -6,6 +7,7 @@ import { User, Package, BarChart, Tag, LogOut } from "lucide-react";
 import { useSellerData } from "@/hooks/useSellerData";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { Link } from "react-router-dom";
 
 const SellerDashboard = () => {
   const { sellerData, recentOrders, loading, error, handleLogout } = useSellerData();
@@ -47,10 +49,12 @@ const SellerDashboard = () => {
                   <Package className="mr-2 h-4 w-4" />
                   Orders
                 </Button>
-                <Button variant="ghost" className="w-full justify-start">
-                  <Tag className="mr-2 h-4 w-4" />
-                  Products
-                </Button>
+                <Link to="/seller-products">
+                  <Button variant="ghost" className="w-full justify-start">
+                    <Tag className="mr-2 h-4 w-4" />
+                    Products
+                  </Button>
+                </Link>
                 <Button variant="ghost" className="w-full justify-start text-red-500" onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout

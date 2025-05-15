@@ -1,3 +1,4 @@
+
 const Product = require('../models/Product');
 
 // @desc    Create a new product
@@ -144,7 +145,7 @@ exports.deleteProduct = async (req, res) => {
 };
 
 // @desc    Get seller products
-// @route   GET /api/products/seller
+// @route   GET /api/products/seller/my-products
 // @access  Private/Seller
 exports.getSellerProducts = async (req, res) => {
   try {
