@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -127,7 +128,7 @@ const UserDashboard = () => {
                 <h2 className="text-lg font-semibold mb-2">Your Recent Activity</h2>
                 <p className="text-gray-600">You've placed {recentOrders.length} orders in the past month.</p>
                 <Button className="mt-4 bg-brand-500 hover:bg-brand-600" asChild>
-                  <Link to="/catalog">Continue Shopping</Link>
+                  <Link to="/categories">Continue Shopping</Link>
                 </Button>
               </Card>
             </div>
@@ -178,7 +179,7 @@ const UserDashboard = () => {
               
               <div className="mt-4">
                 <Button variant="outline" asChild>
-                  <Link to="/orders">View All Orders</Link>
+                  <Link to="/categories">View All Products</Link>
                 </Button>
               </div>
             </Card>
