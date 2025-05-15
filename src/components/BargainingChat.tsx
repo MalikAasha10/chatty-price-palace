@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { X, Send, Clock, Loader2, DollarSign, Check, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { io, Socket } from 'socket.io-client';
+import { Socket, io as socketIO } from 'socket.io-client';
 import axios from 'axios';
 
 interface Message {
@@ -61,7 +60,7 @@ const BargainingChat: React.FC<BargainingChatProps> = ({
     }
     
     // Create socket connection
-    const socketInstance = io('http://localhost:5000', {
+    const socketInstance = socketIO('http://localhost:5000', {
       auth: {
         token
       }

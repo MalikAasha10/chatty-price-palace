@@ -13,7 +13,7 @@ interface SellerOfferProps {
   sellerReviews: number;
   initialPrice: number;
   stock: number;
-  fulfillment: 'Seller' | 'BargainBay';
+  fulfillment: 'Seller' | 'BargainBay';  // Updated to use strict union type instead of string
   deliveryDays: number;
   responseRate: number; // percentage
   isPreferredSeller?: boolean;
