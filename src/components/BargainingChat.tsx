@@ -1,20 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import { X, Send, Clock, Loader2, DollarSign, Check, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Socket, io as socketIO } from 'socket.io-client';
 import axios from 'axios';
 
-interface Message {
-  id?: number;
-  text: string;
-  sender: 'buyer' | 'seller';
-  timestamp: Date;
-  isOffer?: boolean;
-  offerAmount?: number;
-}
+// Import the new components
+import ChatHeader from './bargaining/ChatHeader';
+import MessageList, { MessageType } from './bargaining/MessageList';
+import MessageInput from './bargaining/MessageInput';
+import ConnectionStatus from './bargaining/ConnectionStatus';
 
 interface BargainingChatProps {
   sellerId: string | number;
@@ -33,8 +28,7 @@ const BargainingChat: React.FC<BargainingChatProps> = ({
   onClose,
   onPriceChange
 }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState('');
+  const [messages, setMessages] = useState<MessageType[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [lastOfferAmount, setLastOfferAmount] = useState(initialPrice);
   const [bargainId, setBargainId] = useState<string | null>(null);
@@ -42,7 +36,6 @@ const BargainingChat: React.FC<BargainingChatProps> = ({
   const [isConnected, setIsConnected] = useState(false);
   const [bargainStatus, setBargainStatus] = useState<'active' | 'accepted' | 'rejected' | 'expired'>('active');
   
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
   // Initialize Socket.IO connection
@@ -135,11 +128,6 @@ const BargainingChat: React.FC<BargainingChatProps> = ({
     };
   }, []);
   
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-  
   // Join bargain room when bargainId is available
   useEffect(() => {
     if (socket && bargainId && isConnected) {
@@ -207,7 +195,7 @@ const BargainingChat: React.FC<BargainingChatProps> = ({
           }
         } else {
           // Add welcome message if no messages exist
-          const welcomeMessage: Message = {
+          const welcomeMessage: MessageType = {
             text: `Hello! I'm a representative from ${sellerName}. How can I help you today?`,
             sender: 'seller',
             timestamp: new Date()
@@ -225,7 +213,7 @@ const BargainingChat: React.FC<BargainingChatProps> = ({
     }
   };
   
-  const handleSendMessage = () => {
+  const handleSendMessage = (inputValue: string) => {
     if (!inputValue.trim() || !socket || !bargainId) return;
     
     // Check if the message contains a price offer
@@ -245,8 +233,6 @@ const BargainingChat: React.FC<BargainingChatProps> = ({
     if (isOffer) {
       setIsTyping(true);
     }
-    
-    setInputValue('');
   };
   
   const handleAcceptOffer = () => {
@@ -270,176 +256,35 @@ const BargainingChat: React.FC<BargainingChatProps> = ({
     });
   };
   
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSendMessage();
-    }
-  };
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-  
   // Disable chat if bargain is not active
   const isChatDisabled = bargainStatus !== 'active';
 
   return (
     <Card className="bargain-chat-container">
-      <div className="flex items-center justify-between mb-3 pb-2 border-b">
-        <div className="flex items-center">
-          <h3 className="font-medium">Bargaining with {sellerName}</h3>
-          {bargainStatus !== 'active' && (
-            <div className="ml-2">
-              <Badge status={bargainStatus} />
-            </div>
-          )}
-        </div>
-        <Button variant="ghost" size="icon" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
+      <ChatHeader 
+        sellerName={sellerName} 
+        bargainStatus={bargainStatus} 
+        onClose={onClose} 
+      />
       
-      <div className="bargain-chat-messages h-80 overflow-y-auto p-4">
-        {messages.map((message, index) => (
-          <div 
-            key={index}
-            className={`flex flex-col mb-3 ${message.sender === 'seller' ? 'items-start' : 'items-end'}`}
-          >
-            <div className={`chat-bubble max-w-[80%] p-3 rounded-lg ${
-              message.sender === 'seller' 
-                ? 'bg-gray-100 text-gray-800' 
-                : 'bg-brand-500 text-white'
-            }`}>
-              {message.text}
-              {message.isOffer && message.offerAmount && (
-                <div className={`mt-1 font-semibold flex items-center ${
-                  message.sender === 'seller' ? 'text-green-600' : 'text-white'
-                }`}>
-                  <DollarSign className="h-4 w-4 mr-1" />
-                  Offer: ${message.offerAmount.toFixed(2)}
-                </div>
-              )}
-            </div>
-            <div className="text-xs text-gray-500 mt-1 flex items-center">
-              <Clock className="h-3 w-3 mr-1" />
-              {formatTime(message.timestamp)}
-            </div>
-          </div>
-        ))}
-        
-        {/* Typing indicator */}
-        {isTyping && (
-          <div className="flex items-start">
-            <div className="chat-bubble bg-gray-100 p-3 rounded-lg flex items-center">
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              <span>{sellerName} is typing...</span>
-            </div>
-          </div>
-        )}
-        
-        {/* Last message offer acceptance button */}
-        {messages.length > 0 && 
-          messages[messages.length - 1].sender === 'seller' && 
-          messages[messages.length - 1].isOffer && 
-          bargainStatus === 'active' && (
-            <div className="flex justify-center my-2">
-              <Button 
-                className="bg-green-500 hover:bg-green-600 text-white flex items-center"
-                size="sm"
-                onClick={handleAcceptOffer}
-              >
-                <Check className="h-4 w-4 mr-1" />
-                Accept Offer: ${messages[messages.length - 1].offerAmount?.toFixed(2)}
-              </Button>
-            </div>
-          )}
-        
-        {/* Bargain status messages */}
-        {bargainStatus === 'accepted' && (
-          <div className="bg-green-100 text-green-800 p-3 rounded-lg my-2 text-center">
-            <Check className="h-5 w-5 mx-auto mb-1" />
-            <p className="font-medium">Offer Accepted!</p>
-            <p className="text-sm">Your price has been updated to ${lastOfferAmount.toFixed(2)}</p>
-          </div>
-        )}
-        
-        {bargainStatus === 'rejected' && (
-          <div className="bg-red-100 text-red-800 p-3 rounded-lg my-2 text-center">
-            <AlertCircle className="h-5 w-5 mx-auto mb-1" />
-            <p className="font-medium">Offer Rejected</p>
-            <p className="text-sm">The seller has declined your offer</p>
-          </div>
-        )}
-        
-        {bargainStatus === 'expired' && (
-          <div className="bg-gray-100 text-gray-800 p-3 rounded-lg my-2 text-center">
-            <Clock className="h-5 w-5 mx-auto mb-1" />
-            <p className="font-medium">Offer Expired</p>
-            <p className="text-sm">This bargaining session has expired</p>
-          </div>
-        )}
-        
-        <div ref={messagesEndRef} />
-      </div>
+      <MessageList 
+        messages={messages}
+        isTyping={isTyping}
+        sellerName={sellerName}
+        bargainStatus={bargainStatus}
+        lastOfferAmount={lastOfferAmount}
+        onAcceptOffer={handleAcceptOffer}
+      />
       
-      <div className="mt-3 pt-3 border-t flex items-center">
-        <Input
-          placeholder={isChatDisabled 
-            ? "Chat is unavailable" 
-            : "Type a message or make an offer (e.g. $45.99)..."
-          }
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyPress={handleKeyPress}
-          className="mr-2"
-          disabled={isChatDisabled || isTyping || !isConnected}
-        />
-        <Button 
-          onClick={handleSendMessage} 
-          disabled={!inputValue.trim() || isTyping || isChatDisabled || !isConnected}
-          className="bg-brand-500 hover:bg-brand-600"
-        >
-          <Send className="h-4 w-4" />
-        </Button>
-      </div>
+      <MessageInput 
+        onSendMessage={handleSendMessage}
+        isDisabled={isChatDisabled}
+        isTyping={isTyping}
+        isConnected={isConnected}
+      />
       
-      {!isConnected && (
-        <div className="mt-2 text-center text-sm text-red-500 flex items-center justify-center">
-          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-          Connecting to chat server...
-        </div>
-      )}
+      <ConnectionStatus isConnected={isConnected} />
     </Card>
-  );
-};
-
-// Badge component for bargain status
-const Badge = ({ status }: { status: string }) => {
-  let color;
-  let label;
-  
-  switch (status) {
-    case 'accepted':
-      color = 'bg-green-100 text-green-800';
-      label = 'Accepted';
-      break;
-    case 'rejected':
-      color = 'bg-red-100 text-red-800';
-      label = 'Rejected';
-      break;
-    case 'expired':
-      color = 'bg-gray-100 text-gray-700';
-      label = 'Expired';
-      break;
-    default:
-      color = 'bg-blue-100 text-blue-800';
-      label = 'Active';
-  }
-  
-  return (
-    <span className={`text-xs px-2 py-1 rounded-full ${color}`}>
-      {label}
-    </span>
   );
 };
 
