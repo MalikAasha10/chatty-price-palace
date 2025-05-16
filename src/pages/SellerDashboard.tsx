@@ -3,7 +3,7 @@
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Package, BarChart, Tag, LogOut } from "lucide-react";
+import { User, Package, BarChart, Tag, LogOut, MessageSquare } from 'lucide-react';
 import { useSellerData } from "@/hooks/useSellerData";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -55,6 +55,12 @@ const SellerDashboard = () => {
                     Products
                   </Button>
                 </Link>
+                <Link to="/seller-chats">
+                  <Button variant="ghost" className="w-full justify-start">
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Customer Chats
+                  </Button>
+                </Link>
                 <Button variant="ghost" className="w-full justify-start text-red-500" onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout
@@ -88,7 +94,15 @@ const SellerDashboard = () => {
 
             {/* Recent Orders Table */}
             <Card className="p-6">
-              <h3 className="text-xl font-semibold mb-4">Recent Orders</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold">Recent Orders</h3>
+                <Link to="/seller-chats">
+                  <Button variant="outline" size="sm">
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    View Customer Chats
+                  </Button>
+                </Link>
+              </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full table-auto">
                   <thead>

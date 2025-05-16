@@ -1,19 +1,19 @@
 
-const socketIO = require('socket.io');
+const socketIo = require('socket.io');
 const jwt = require('jsonwebtoken');
 const Bargain = require('./models/Bargain');
-const User = require('./models/User');
 const Seller = require('./models/Seller');
+const User = require('./models/User');
 
-module.exports = (server) => {
-  const io = socketIO(server, {
+module.exports = function(server) {
+  const io = socketIo(server, {
     cors: {
-      origin: '*',
-      methods: ['GET', 'POST']
+      origin: "*",
+      methods: ["GET", "POST"]
     }
   });
   
-  // Authentication middleware
+  // Socket.io middleware for authentication
   io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth.token;
@@ -22,26 +22,19 @@ module.exports = (server) => {
         return next(new Error('Authentication error: Token not provided'));
       }
       
-      // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const user = await User.findById(decoded.id);
+      socket.user = decoded;
       
-      if (!user) {
-        return next(new Error('Authentication error: User not found'));
-      }
-      
-      socket.userId = decoded.id;
-      socket.userType = user.role;
       next();
     } catch (error) {
-      return next(new Error('Authentication error: ' + error.message));
+      return next(new Error('Authentication error: Invalid token'));
     }
   });
-
+  
   io.on('connection', (socket) => {
-    console.log(`User connected: ${socket.userId}`);
+    console.log(`User connected: ${socket.user.id}`);
     
-    // Join a bargaining room based on bargain ID
+    // Join a specific bargain chat room
     socket.on('join_bargain', async (bargainId) => {
       try {
         const bargain = await Bargain.findById(bargainId);
@@ -51,35 +44,29 @@ module.exports = (server) => {
           return;
         }
         
-        // Check if user is either buyer or seller
-        if (bargain.buyerId.toString() !== socket.userId && 
-            bargain.sellerId.toString() !== socket.userId) {
+        // Check if user is buyer or seller
+        if (bargain.buyerId.toString() !== socket.user.id && 
+            bargain.sellerId.toString() !== socket.user.id) {
           socket.emit('error', { message: 'Not authorized to join this bargaining session' });
           return;
         }
         
-        // Join the room
-        socket.join(`bargain-${bargainId}`);
-        console.log(`User ${socket.userId} joined bargain room ${bargainId}`);
-        
-        // Notify other participants
-        const userRole = bargain.buyerId.toString() === socket.userId ? 'Buyer' : 'Seller';
-        socket.to(`bargain-${bargainId}`).emit('user_joined', { 
-          userId: socket.userId,
-          userRole
-        });
+        // Join the bargain room
+        socket.join(`bargain:${bargainId}`);
+        console.log(`User ${socket.user.id} joined bargain room ${bargainId}`);
       } catch (error) {
-        socket.emit('error', { message: error.message });
+        console.error('Error joining bargain room:', error);
+        socket.emit('error', { message: 'Failed to join bargaining session' });
       }
     });
     
-    // Leave a bargaining room
+    // Leave a bargain chat room
     socket.on('leave_bargain', (bargainId) => {
-      socket.leave(`bargain-${bargainId}`);
-      console.log(`User ${socket.userId} left bargain room ${bargainId}`);
+      socket.leave(`bargain:${bargainId}`);
+      console.log(`User ${socket.user.id} left bargain room ${bargainId}`);
     });
     
-    // New message event
+    // Send a new message in the bargain
     socket.on('new_message', async (data) => {
       try {
         const { bargainId, text, isOffer, offerAmount } = data;
@@ -91,25 +78,25 @@ module.exports = (server) => {
           return;
         }
         
-        // Check if user is either buyer or seller
-        const isBuyer = bargain.buyerId.toString() === socket.userId;
-        const isSeller = bargain.sellerId.toString() === socket.userId;
+        // Check if user is buyer or seller
+        const isBuyer = bargain.buyerId.toString() === socket.user.id;
+        const isSeller = bargain.sellerId.toString() === socket.user.id;
         
         if (!isBuyer && !isSeller) {
-          socket.emit('error', { message: 'Not authorized to send messages to this bargaining session' });
+          socket.emit('error', { message: 'Not authorized to send messages in this bargaining session' });
           return;
         }
         
-        // Create message
+        // Create the message
         const message = {
           sender: isBuyer ? 'buyer' : 'seller',
           text,
           isOffer: isOffer || false,
-          offerAmount: offerAmount || undefined,
+          offerAmount,
           timestamp: new Date()
         };
         
-        // Save message to database
+        // Add message to the database
         bargain.messages.push(message);
         
         // If it's an offer, update the current price
@@ -120,20 +107,23 @@ module.exports = (server) => {
         bargain.updatedAt = new Date();
         await bargain.save();
         
-        // Broadcast message to room
-        io.to(`bargain-${bargainId}`).emit('message_received', message);
+        // Broadcast the message to everyone in the bargain room
+        io.to(`bargain:${bargainId}`).emit('message_received', message);
+        
+        console.log(`New message in bargain ${bargainId} from ${message.sender}`);
       } catch (error) {
-        socket.emit('error', { message: error.message });
+        console.error('Error sending message:', error);
+        socket.emit('error', { message: 'Failed to send message' });
       }
     });
     
-    // Update bargain status event (seller only)
+    // Update bargain status (accepted, rejected, etc.)
     socket.on('update_status', async (data) => {
       try {
         const { bargainId, status } = data;
         
-        if (!status || !['accepted', 'rejected', 'active', 'expired'].includes(status)) {
-          socket.emit('error', { message: 'Valid status is required' });
+        if (!bargainId || !status || !['accepted', 'rejected'].includes(status)) {
+          socket.emit('error', { message: 'Invalid bargain status update request' });
           return;
         }
         
@@ -144,8 +134,8 @@ module.exports = (server) => {
           return;
         }
         
-        // Check if user is the seller
-        if (bargain.sellerId.toString() !== socket.userId) {
+        // Only seller can update status
+        if (bargain.sellerId.toString() !== socket.user.id) {
           socket.emit('error', { message: 'Only the seller can update bargain status' });
           return;
         }
@@ -155,18 +145,21 @@ module.exports = (server) => {
         bargain.updatedAt = new Date();
         await bargain.save();
         
-        // Broadcast status change
-        io.to(`bargain-${bargainId}`).emit('status_updated', {
-          status,
-          updatedAt: bargain.updatedAt
+        // Broadcast status update to everyone in the bargain room
+        io.to(`bargain:${bargainId}`).emit('status_updated', { 
+          bargainId, 
+          status 
         });
+        
+        console.log(`Bargain ${bargainId} status updated to ${status}`);
       } catch (error) {
-        socket.emit('error', { message: error.message });
+        console.error('Error updating bargain status:', error);
+        socket.emit('error', { message: 'Failed to update bargain status' });
       }
     });
     
     socket.on('disconnect', () => {
-      console.log(`User disconnected: ${socket.userId}`);
+      console.log(`User disconnected: ${socket.user.id}`);
     });
   });
   

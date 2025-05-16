@@ -14,6 +14,7 @@ import UserDashboard from "./pages/UserDashboard";
 import UserProfile from "./pages/UserProfile";
 import SellerDashboard from "./pages/SellerDashboard";
 import SellerProducts from "./pages/SellerProducts";
+import SellerChatsPage from "./pages/SellerChatsPage";
 import CategoriesPage from "./pages/CategoriesPage";
 import DealsPage from "./pages/DealsPage";
 import NotFound from "./pages/NotFound";
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/user-profile" element={<UserProfile />} />
           <Route path="/seller-dashboard" element={<SellerDashboard />} />
           <Route path="/seller-products" element={<SellerProducts />} />
+          <Route path="/seller-chats" element={<SellerChatsPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/deals" element={<DealsPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
