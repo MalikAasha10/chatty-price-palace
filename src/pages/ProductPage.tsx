@@ -1,6 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SellerOffer from '@/components/SellerOffer';
@@ -9,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from '@/components/ui/badge';
 import { Star, ChevronRight, Heart, Share, TrendingUp, Award, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Product } from '@/hooks/useProducts';
 
 interface ProductImage {
   id: number;
@@ -36,8 +38,8 @@ interface SellerData {
   isPreferredSeller?: boolean;
 }
 
-// Sample product data
-const productData = {
+// Sample product data to use as fallback
+const sampleProductData = {
   id: 1,
   name: 'Premium Wireless Noise-Cancelling Headphones',
   brand: 'AudioTech',
@@ -92,7 +94,7 @@ const productData = {
       sellerReviews: 1245,
       initialPrice: 249.99, 
       stock: 15, 
-      fulfillment: 'BargainBay', 
+      fulfillment: 'BargainBay' as const, 
       deliveryDays: 2, 
       responseRate: 98,
       isPreferredSeller: true
@@ -104,7 +106,7 @@ const productData = {
       sellerReviews: 873,
       initialPrice: 269.99, 
       stock: 8, 
-      fulfillment: 'Seller', 
+      fulfillment: 'Seller' as const, 
       deliveryDays: 3, 
       responseRate: 95
     },
@@ -115,7 +117,7 @@ const productData = {
       sellerReviews: 521,
       initialPrice: 239.99, 
       stock: 5, 
-      fulfillment: 'Seller', 
+      fulfillment: 'Seller' as const, 
       deliveryDays: 4, 
       responseRate: 90
     }
@@ -130,16 +132,88 @@ const productData = {
 
 const ProductPage = () => {
   const { id } = useParams<{ id: string }>();
-  const [activeImageId, setActiveImageId] = useState<number>(productData.images[0]?.id);
+  const [activeImageId, setActiveImageId] = useState<number>(0);
   const [isWishlist, setIsWishlist] = useState(false);
   
+  // Fetch product data
+  const { data: productResponse, isLoading, error } = useQuery({
+    queryKey: ['product', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data } = await axios.get(`/api/products/${id}`);
+      return data;
+    },
+    enabled: !!id,
+  });
+  
+  const product = productResponse?.product;
+  
+  // Use sample data as fallback if real data is not available
+  const displayData = product || sampleProductData;
+  
+  // Prepare images for display
+  const images = product ? 
+    product.images.map((img: string | { url: string }, index: number) => ({
+      id: index,
+      url: typeof img === 'string' ? img : img.url
+    })) : 
+    sampleProductData.images;
+  
+  // Set the first image as active image when product loads
+  useEffect(() => {
+    if (images?.length > 0) {
+      setActiveImageId(images[0].id);
+    }
+  }, [images]);
+  
   // Get the active image URL
-  const activeImage = productData.images.find(img => img.id === activeImageId);
+  const activeImage = images?.find(img => img.id === activeImageId);
   
   // Toggle wishlist
   const toggleWishlist = () => {
     setIsWishlist(!isWishlist);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-grow flex items-center justify-center">
+          <p>Loading product details...</p>
+        </main>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-grow flex items-center justify-center">
+          <p>Error loading product details. Please try again later.</p>
+        </main>
+      </div>
+    );
+  }
+
+  // Map API data to display format
+  const sellers = product ? 
+    [
+      { 
+        sellerId: 101, 
+        sellerName: product.sellerRef.storeName || product.sellerRef.name, 
+        sellerRating: 4.8, 
+        sellerReviews: 45,
+        initialPrice: product.price, 
+        stock: 15, 
+        fulfillment: 'BargainBay' as const, 
+        deliveryDays: 2, 
+        responseRate: 98,
+        isPreferredSeller: true,
+        productId: product._id
+      }
+    ] : 
+    sampleProductData.sellers;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -151,11 +225,11 @@ const ProductPage = () => {
           <nav className="flex text-sm text-gray-500 mb-6">
             <Link to="/" className="hover:text-brand-600">Home</Link>
             <ChevronRight className="h-4 w-4 mx-1" />
-            <Link to="/categories" className="hover:text-brand-600">{productData.category}</Link>
+            <Link to="/categories" className="hover:text-brand-600">
+              {product?.category || displayData.category}
+            </Link>
             <ChevronRight className="h-4 w-4 mx-1" />
-            <Link to={`/categories/${productData.subcategory}`} className="hover:text-brand-600">{productData.subcategory}</Link>
-            <ChevronRight className="h-4 w-4 mx-1" />
-            <span className="text-gray-900 font-medium truncate">{productData.name}</span>
+            <span className="text-gray-900 font-medium truncate">{product?.title || displayData.name}</span>
           </nav>
           
           {/* Product Overview Section */}
@@ -165,14 +239,14 @@ const ProductPage = () => {
               <div className="space-y-4">
                 <div className="bg-gray-100 rounded-lg overflow-hidden aspect-square flex items-center justify-center">
                   <img 
-                    src={activeImage?.url || productData.images[0]?.url}
-                    alt={productData.name}
+                    src={activeImage?.url || images[0]?.url}
+                    alt={product?.title || displayData.name}
                     className="max-h-full max-w-full object-contain"
                   />
                 </div>
                 
                 <div className="grid grid-cols-4 gap-2">
-                  {productData.images.map(image => (
+                  {images.map(image => (
                     <button
                       key={image.id}
                       onClick={() => setActiveImageId(image.id)}
@@ -183,7 +257,7 @@ const ProductPage = () => {
                     >
                       <img 
                         src={image.url}
-                        alt={`${productData.name} view ${image.id}`}
+                        alt={`${product?.title || displayData.name} view ${image.id}`}
                         className="w-full h-full object-cover"
                       />
                     </button>
@@ -195,7 +269,9 @@ const ProductPage = () => {
               <div>
                 <div className="mb-4">
                   <div className="flex items-center justify-between">
-                    <Badge className="bg-brand-100 text-brand-800 hover:bg-brand-200">{productData.category}</Badge>
+                    <Badge className="bg-brand-100 text-brand-800 hover:bg-brand-200">
+                      {product?.category || displayData.category}
+                    </Badge>
                     <div className="flex space-x-2">
                       <Button 
                         variant="ghost" 
@@ -210,45 +286,47 @@ const ProductPage = () => {
                       </Button>
                     </div>
                   </div>
-                  <h1 className="text-2xl md:text-3xl font-bold mt-2">{productData.name}</h1>
-                  <div className="text-sm text-gray-500 mt-1">By {productData.brand}</div>
+                  <h1 className="text-2xl md:text-3xl font-bold mt-2">{product?.title || displayData.name}</h1>
+                  <div className="text-sm text-gray-500 mt-1">By {product?.sellerRef?.name || displayData.brand}</div>
                 </div>
                 
                 <div className="flex items-center mb-4">
                   <div className="flex items-center">
                     <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                    <span className="font-medium ml-1">{productData.rating.toFixed(1)}</span>
+                    <span className="font-medium ml-1">{(product?.rating || displayData.rating).toFixed(1)}</span>
                   </div>
                   <span className="mx-2 text-gray-300">|</span>
-                  <span className="text-gray-500">{productData.reviewCount} reviews</span>
+                  <span className="text-gray-500">{product?.reviewCount || displayData.reviewCount} reviews</span>
                   <span className="mx-2 text-gray-300">|</span>
                   <span className="text-brand-600 flex items-center">
                     <TrendingUp className="h-4 w-4 mr-1" />
-                    {productData.sellers.length} sellers available
+                    {sellers.length} sellers available
                   </span>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-100 rounded-md p-4 mb-6">
-                  <div className="flex items-start">
-                    <Award className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
-                    <div>
-                      <h3 className="font-semibold text-blue-800">Bargaining Available</h3>
-                      <p className="text-sm text-blue-700">
-                        This product supports real-time price negotiation. Start a chat with any seller to bargain and get the best price!
-                      </p>
+                {product?.allowBargaining && (
+                  <div className="bg-blue-50 border border-blue-100 rounded-md p-4 mb-6">
+                    <div className="flex items-start">
+                      <Award className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
+                      <div>
+                        <h3 className="font-semibold text-blue-800">Bargaining Available</h3>
+                        <p className="text-sm text-blue-700">
+                          This product supports real-time price negotiation. Start a chat with any seller to bargain and get the best price!
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
                 
                 <div className="mb-6">
                   <h3 className="font-medium text-gray-900 mb-2">Description</h3>
-                  <p className="text-gray-700">{productData.description}</p>
+                  <p className="text-gray-700">{product?.description || displayData.description}</p>
                 </div>
                 
                 <div className="mb-6">
                   <h3 className="font-medium text-gray-900 mb-2">Key Features</h3>
                   <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
-                    {productData.features.map((feature, index) => (
+                    {(product?.features || displayData.features).map((feature: string, index: number) => (
                       <li key={index} className="text-gray-700 flex items-center">
                         <div className="h-1.5 w-1.5 rounded-full bg-brand-500 mr-2"></div>
                         {feature}
@@ -271,7 +349,7 @@ const ProductPage = () => {
               <h2 className="text-xl font-bold mb-6">Compare Seller Offers</h2>
               
               <div className="space-y-4">
-                {productData.sellers.map((seller) => (
+                {sellers.map((seller) => (
                   <SellerOffer key={seller.sellerId} {...seller} />
                 ))}
               </div>
@@ -284,13 +362,13 @@ const ProductPage = () => {
               <Tabs defaultValue="specifications">
                 <TabsList className="mb-6">
                   <TabsTrigger value="specifications">Specifications</TabsTrigger>
-                  <TabsTrigger value="reviews">Reviews ({productData.reviews.length})</TabsTrigger>
+                  <TabsTrigger value="reviews">Reviews ({product?.reviews?.length || displayData.reviews.length})</TabsTrigger>
                   <TabsTrigger value="shipping">Shipping & Returns</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="specifications" className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                    {Object.entries(productData.specifications).map(([key, value]) => (
+                    {Object.entries(product?.specifications || displayData.specifications).map(([key, value]) => (
                       <div key={key} className="flex">
                         <span className="font-medium text-gray-700 w-24">{key}:</span>
                         <span className="text-gray-600">{value}</span>
@@ -303,14 +381,14 @@ const ProductPage = () => {
                   <div className="flex items-center mb-4">
                     <div className="flex items-center mr-4">
                       <Star className="h-6 w-6 text-yellow-400 fill-yellow-400" />
-                      <span className="text-2xl font-bold ml-2">{productData.rating.toFixed(1)}</span>
+                      <span className="text-2xl font-bold ml-2">{product?.rating || displayData.rating.toFixed(1)}</span>
                     </div>
                     <div className="text-sm text-gray-500">
-                      Based on {productData.reviewCount} reviews
+                      Based on {product?.reviewCount || displayData.reviewCount} reviews
                     </div>
                   </div>
                   
-                  {productData.reviews.map((review) => (
+                  {product?.reviews?.map((review) => (
                     <div key={review.id} className="border-b border-gray-100 pb-4 mb-4 last:border-b-0">
                       <div className="flex justify-between mb-2">
                         <div>
@@ -378,7 +456,7 @@ const ProductPage = () => {
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {productData.relatedProducts.map((product) => (
+                {(product?.relatedProducts || displayData.relatedProducts).map((product) => (
                   <div key={product.id} className="bg-white border rounded-lg overflow-hidden">
                     <Link to={`/product/${product.id}`}>
                       <div className="h-48 overflow-hidden bg-gray-100">

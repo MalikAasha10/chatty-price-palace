@@ -6,7 +6,8 @@ const {
   getProduct,
   updateProduct,
   deleteProduct,
-  getSellerProducts
+  getSellerProducts,
+  getFeaturedProducts
 } = require('../controllers/productController');
 const { protect, sellerOnly } = require('../middleware/authMiddleware');
 
@@ -14,6 +15,7 @@ const router = express.Router();
 
 // Public routes
 router.get('/', getProducts);
+router.get('/featured', getFeaturedProducts);
 router.get('/:id', getProduct);
 
 // Protected seller routes

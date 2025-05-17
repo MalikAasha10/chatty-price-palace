@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Star } from 'lucide-react';
+import { Sparkles, Star, Tag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 interface ProductCardProps {
-  id: number;
+  id: string | number;
   name: string;
   imageUrl: string;
   price: number;
@@ -15,6 +15,7 @@ interface ProductCardProps {
   sellerCount: number;
   category: string;
   bestSeller?: boolean;
+  isBargainable?: boolean;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -26,7 +27,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
   rating,
   sellerCount,
   category,
-  bestSeller = false
+  bestSeller = false,
+  isBargainable = false
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const discount = originalPrice ? Math.round((1 - price / originalPrice) * 100) : 0;
@@ -54,6 +56,16 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         )}
 
+        {isBargainable && (
+          <div className="absolute top-2 left-2 flex flex-col gap-2">
+            {bestSeller && <div className="mb-1"></div>} {/* Spacer if best seller badge exists */}
+            <Badge className="bg-blue-500 text-white px-2 py-1 flex items-center gap-1">
+              <Tag className="h-3 w-3" />
+              <span className="text-xs font-medium">Bargainable</span>
+            </Badge>
+          </div>
+        )}
+
         {discount > 0 && (
           <div className="absolute top-2 right-2">
             <Badge className="bg-red-500 text-white px-2">
@@ -76,7 +88,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
               <span className="text-sm font-medium ml-1">{rating.toFixed(1)}</span>
             </div>
-            <span className="text-xs text-gray-500">({sellerCount} sellers)</span>
+            <span className="text-xs text-gray-500">({sellerCount} {sellerCount === 1 ? 'seller' : 'sellers'})</span>
           </div>
         </div>
         

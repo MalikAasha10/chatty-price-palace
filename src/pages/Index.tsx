@@ -1,14 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowRight, Calendar, TrendingUp, Zap } from 'lucide-react';
+import { useFeaturedProducts } from '@/hooks/useProducts';
 
-// Sample product data
-const featuredProducts = [
+// Featured categories
+const categories = [
+  { id: 1, name: 'Electronics', icon: '🔌', color: 'bg-blue-100 text-blue-800' },
+  { id: 2, name: 'Fashion', icon: '👕', color: 'bg-pink-100 text-pink-800' },
+  { id: 3, name: 'Home & Kitchen', icon: '🏠', color: 'bg-amber-100 text-amber-800' },
+  { id: 4, name: 'Sports & Outdoors', icon: '🏀', color: 'bg-green-100 text-green-800' },
+  { id: 5, name: 'Beauty', icon: '💄', color: 'bg-purple-100 text-purple-800' },
+  { id: 6, name: 'Toys & Games', icon: '🎮', color: 'bg-red-100 text-red-800' }
+];
+
+// Hero banners
+const heroBanners = [
+  { 
+    id: 1,
+    title: "Real-time Bargaining",
+    subtitle: "Negotiate directly with multiple sellers",
+    description: "Get the best price by bargaining in real-time with sellers. Compare offers and save big!",
+    ctaText: "Start Bargaining Now",
+    ctaLink: "/categories",
+    bgImage: "https://images.unsplash.com/photo-1556742031-c6961e8560b0",
+    bgColor: "from-brand-700 to-brand-900"
+  },
+  { 
+    id: 2,
+    title: "Summer Sale",
+    subtitle: "Up to 70% off",
+    description: "Massive discounts on top products from multiple sellers. Limited time only!",
+    ctaText: "Shop the Sale",
+    ctaLink: "/deals",
+    bgImage: "https://images.unsplash.com/photo-1607083206968-13611e3d76db",
+    bgColor: "from-amber-700 to-amber-900"
+  }
+];
+
+// Sample fallback product data
+const sampleProducts = [
   {
     id: 1,
     name: 'Premium Wireless Noise-Cancelling Headphones',
@@ -50,10 +86,7 @@ const featuredProducts = [
     rating: 4.5,
     sellerCount: 8,
     category: 'Furniture'
-  }
-];
-
-const newArrivals = [
+  },
   {
     id: 5,
     name: 'Smart Fitness Watch with Heart Rate Monitor',
@@ -93,10 +126,7 @@ const newArrivals = [
     rating: 4.8,
     sellerCount: 4,
     category: 'Kitchen'
-  }
-];
-
-const bestDeals = [
+  },
   {
     id: 9,
     name: 'Smartphone 128GB Unlocked',
@@ -140,45 +170,30 @@ const bestDeals = [
   }
 ];
 
-// Featured categories
-// Featured categories with links to categories page
-const categories = [
-  { id: 1, name: 'Electronics', icon: '🔌', color: 'bg-blue-100 text-blue-800' },
-  { id: 2, name: 'Fashion', icon: '👕', color: 'bg-pink-100 text-pink-800' },
-  { id: 3, name: 'Home & Kitchen', icon: '🏠', color: 'bg-amber-100 text-amber-800' },
-  { id: 4, name: 'Sports & Outdoors', icon: '🏀', color: 'bg-green-100 text-green-800' },
-  { id: 5, name: 'Beauty', icon: '💄', color: 'bg-purple-100 text-purple-800' },
-  { id: 6, name: 'Toys & Games', icon: '🎮', color: 'bg-red-100 text-red-800' }
-];
-
-// Hero banners
-const heroBanners = [
-  { 
-    id: 1,
-    title: "Real-time Bargaining",
-    subtitle: "Negotiate directly with multiple sellers",
-    description: "Get the best price by bargaining in real-time with sellers. Compare offers and save big!",
-    ctaText: "Start Bargaining Now",
-    ctaLink: "/categories",
-    bgImage: "https://images.unsplash.com/photo-1556742031-c6961e8560b0",
-    bgColor: "from-brand-700 to-brand-900"
-  },
-  { 
-    id: 2,
-    title: "Summer Sale",
-    subtitle: "Up to 70% off",
-    description: "Massive discounts on top products from multiple sellers. Limited time only!",
-    ctaText: "Shop the Sale",
-    ctaLink: "/deals",
-    bgImage: "https://images.unsplash.com/photo-1607083206968-13611e3d76db",
-    bgColor: "from-amber-700 to-amber-900"
-  }
-];
-
 const Index = () => {
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const currentBanner = heroBanners[currentBannerIndex];
+  
+  // Fetch featured products from API
+  const { data: productsData, isLoading } = useFeaturedProducts();
+  
+  // Convert API product data to format expected by ProductCard
+  const mapProductToCardProps = (product) => ({
+    id: product._id,
+    name: product.title,
+    imageUrl: Array.isArray(product.images) && product.images.length > 0 
+      ? (typeof product.images[0] === 'string' ? product.images[0] : product.images[0].url) 
+      : 'https://placehold.co/400',
+    price: product.discountPercentage > 0 ? product.discountedPrice : product.price,
+    originalPrice: product.discountPercentage > 0 ? product.price : undefined,
+    rating: 4.5, // Default rating since we don't have real ratings yet
+    sellerCount: 1, // Default to 1 seller per product for now
+    category: product.category,
+    bestSeller: false,
+    isBargainable: product.allowBargaining
+  });
 
+  // Banner rotation interval
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentBannerIndex(prevIndex => (prevIndex + 1) % heroBanners.length);
@@ -186,6 +201,11 @@ const Index = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Use real data or fallback to samples
+  const featuredProducts = productsData?.featuredProducts?.map(mapProductToCardProps) || sampleProducts.slice(0, 4);
+  const newArrivals = productsData?.featuredProducts?.map(mapProductToCardProps) || sampleProducts.slice(4, 8);
+  const bestDeals = productsData?.dealsProducts?.map(mapProductToCardProps) || sampleProducts.slice(8, 12);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -327,7 +347,9 @@ const Index = () => {
 
               <TabsContent value="featured">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {featuredProducts.map((product) => (
+                  {isLoading ? (
+                    <p>Loading products...</p>
+                  ) : featuredProducts.map((product) => (
                     <ProductCard key={product.id} {...product} />
                   ))}
                 </div>
@@ -335,7 +357,9 @@ const Index = () => {
 
               <TabsContent value="new">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {newArrivals.map((product) => (
+                  {isLoading ? (
+                    <p>Loading products...</p>
+                  ) : newArrivals.map((product) => (
                     <ProductCard key={product.id} {...product} />
                   ))}
                 </div>
@@ -343,7 +367,9 @@ const Index = () => {
 
               <TabsContent value="deals">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {bestDeals.map((product) => (
+                  {isLoading ? (
+                    <p>Loading products...</p>
+                  ) : bestDeals.map((product) => (
                     <ProductCard key={product.id} {...product} />
                   ))}
                 </div>

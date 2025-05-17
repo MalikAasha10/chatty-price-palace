@@ -9,6 +9,12 @@ exports.createProduct = async (req, res) => {
     // Add seller reference to product
     req.body.sellerRef = req.user._id;
     
+    // Calculate discounted price if discount is provided
+    if (req.body.discountPercentage > 0) {
+      req.body.discountedPrice = req.body.price * (1 - req.body.discountPercentage / 100);
+      req.body.isOnDeal = true;
+    }
+    
     const product = await Product.create(req.body);
     
     res.status(201).json({
@@ -28,12 +34,64 @@ exports.createProduct = async (req, res) => {
 // @access  Public
 exports.getProducts = async (req, res) => {
   try {
-    const products = await Product.find();
+    const query = {};
+    
+    // Filter by category if provided
+    if (req.query.category) {
+      query.category = req.query.category;
+    }
+    
+    // Filter by deals if requested
+    if (req.query.deals === 'true') {
+      query.isOnDeal = true;
+      query.discountPercentage = { $gt: 0 };
+    }
+    
+    // Filter by bargaining if requested
+    if (req.query.bargainable === 'true') {
+      query.allowBargaining = true;
+    }
+    
+    const products = await Product.find(query).populate('sellerRef', 'name storeName');
     
     res.status(200).json({
       success: true,
       count: products.length,
       products
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// @desc    Get featured products
+// @route   GET /api/products/featured
+// @access  Public
+exports.getFeaturedProducts = async (req, res) => {
+  try {
+    // Featured products could be the newest, most discounted, or most popular
+    const featuredProducts = await Product.find()
+      .sort({ createdAt: -1 }) // Sort by newest first
+      .limit(8)
+      .populate('sellerRef', 'name storeName');
+    
+    const dealsProducts = await Product.find({ isOnDeal: true, discountPercentage: { $gt: 10 } })
+      .sort({ discountPercentage: -1 }) // Sort by highest discount
+      .limit(8)
+      .populate('sellerRef', 'name storeName');
+    
+    const bargainableProducts = await Product.find({ allowBargaining: true })
+      .limit(8)
+      .populate('sellerRef', 'name storeName');
+    
+    res.status(200).json({
+      success: true,
+      featuredProducts,
+      dealsProducts,
+      bargainableProducts
     });
   } catch (error) {
     res.status(500).json({
@@ -89,6 +147,16 @@ exports.updateProduct = async (req, res) => {
         success: false,
         message: 'Not authorized to update this product'
       });
+    }
+    
+    // Update discounted price if price or discount is changing
+    if (req.body.price || req.body.discountPercentage !== undefined) {
+      const price = req.body.price || product.price;
+      const discountPercentage = req.body.discountPercentage !== undefined ? 
+        req.body.discountPercentage : product.discountPercentage;
+      
+      req.body.discountedPrice = price * (1 - discountPercentage / 100);
+      req.body.isOnDeal = discountPercentage > 0;
     }
     
     product = await Product.findByIdAndUpdate(req.params.id, req.body, {

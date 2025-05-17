@@ -38,10 +38,39 @@ const productSchema = new mongoose.Schema({
       return this.price * 0.8;
     }
   },
+  category: {
+    type: String,
+    required: [true, 'Please provide a product category'],
+    enum: ['Electronics', 'Fashion', 'Home & Kitchen', 'Sports & Outdoors', 'Beauty', 'Toys & Games', 'Other']
+  },
+  discountPercentage: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0
+  },
+  discountedPrice: {
+    type: Number,
+    default: function() {
+      return this.price * (1 - this.discountPercentage / 100);
+    }
+  },
+  isOnDeal: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
+});
+
+// Update discounted price when price or discount percentage changes
+productSchema.pre('save', function(next) {
+  if (this.isModified('price') || this.isModified('discountPercentage')) {
+    this.discountedPrice = this.price * (1 - this.discountPercentage / 100);
+  }
+  next();
 });
 
 module.exports = mongoose.model('Product', productSchema);
