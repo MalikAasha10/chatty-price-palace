@@ -1,484 +1,264 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
+import { useQuery } from '@tanstack/react-query';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { toast } from '@/components/ui/use-toast';
+import { Separator } from '@/components/ui/separator';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import SellerOffer from '@/components/SellerOffer';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from '@/components/ui/badge';
-import { Star, ChevronRight, Heart, Share, TrendingUp, Award, Shield } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import BargainingChat from '@/components/BargainingChat';
 import { Product } from '@/hooks/useProducts';
 
-interface ProductImage {
-  id: number;
-  url: string;
-}
-
-interface ProductReview {
-  id: number;
-  username: string;
-  rating: number;
-  date: string;
-  comment: string;
-}
-
-interface SellerData {
-  sellerId: number;
-  sellerName: string;
-  sellerRating: number;
-  sellerReviews: number;
-  initialPrice: number;
-  stock: number;
-  fulfillment: 'Seller' | 'BargainBay';
-  deliveryDays: number;
-  responseRate: number;
-  isPreferredSeller?: boolean;
-}
-
-// Sample product data to use as fallback
-const sampleProductData = {
-  id: 1,
-  name: 'Premium Wireless Noise-Cancelling Headphones',
-  brand: 'AudioTech',
-  description: `Experience premium sound quality with these wireless noise-cancelling headphones. 
-  Features include 30-hour battery life, comfortable over-ear design, and advanced noise-cancelling 
-  technology. Compatible with all Bluetooth devices and comes with a carrying case.`,
-  
-  features: [
-    'Active Noise Cancellation Technology',
-    '30-hour Battery Life',
-    'Premium Sound Quality with Deep Bass',
-    'Comfortable Over-Ear Design',
-    'Quick Charge: 5 mins for 3 hours playback',
-    'Voice Assistant Compatible',
-    'Foldable Design with Carrying Case'
-  ],
-  
-  specifications: {
-    'Brand': 'AudioTech',
-    'Model': 'AT-NC800',
-    'Color': 'Matte Black',
-    'Connectivity': 'Bluetooth 5.0, 3.5mm Jack',
-    'Battery': 'Lithium-ion, 30 hours',
-    'Weight': '250g',
-    'Warranty': '2 Years Manufacturer Warranty'
-  },
-  
-  images: [
-    { id: 1, url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e' },
-    { id: 2, url: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b' },
-    { id: 3, url: 'https://images.unsplash.com/photo-1563330232-57114bb0823c' },
-    { id: 4, url: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1' }
-  ],
-  
-  rating: 4.7,
-  reviewCount: 387,
-  
-  reviews: [
-    { id: 1, username: 'AudioFan452', rating: 5, date: '2023-12-10', comment: 'Best headphones I\'ve ever purchased! The noise cancellation is outstanding and the battery life is incredible.' },
-    { id: 2, username: 'MusicLover', rating: 4, date: '2023-11-28', comment: 'Great sound quality and comfortable for long listening sessions. The only downside is they\'re a bit bulky for travel.' },
-    { id: 3, username: 'TechReviewer', rating: 5, date: '2023-11-15', comment: 'Premium build quality and excellent sound. The noise cancellation works perfectly even in noisy environments.' }
-  ],
-  
-  category: 'Electronics',
-  subcategory: 'Headphones & Earbuds',
-  
-  sellers: [
-    { 
-      sellerId: 101, 
-      sellerName: 'ElectronicsPro', 
-      sellerRating: 4.8, 
-      sellerReviews: 1245,
-      initialPrice: 249.99, 
-      stock: 15, 
-      fulfillment: 'BargainBay' as const, 
-      deliveryDays: 2, 
-      responseRate: 98,
-      isPreferredSeller: true
-    },
-    { 
-      sellerId: 102, 
-      sellerName: 'AudioGadgets', 
-      sellerRating: 4.6, 
-      sellerReviews: 873,
-      initialPrice: 269.99, 
-      stock: 8, 
-      fulfillment: 'Seller' as const, 
-      deliveryDays: 3, 
-      responseRate: 95
-    },
-    { 
-      sellerId: 103, 
-      sellerName: 'TechDeals', 
-      sellerRating: 4.3, 
-      sellerReviews: 521,
-      initialPrice: 239.99, 
-      stock: 5, 
-      fulfillment: 'Seller' as const, 
-      deliveryDays: 4, 
-      responseRate: 90
-    }
-  ],
-  
-  relatedProducts: [
-    { id: 5, name: 'Wireless Earbuds with Charging Case', price: 89.99, imageUrl: 'https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb' },
-    { id: 6, name: 'Bluetooth Speaker Waterproof', price: 69.99, imageUrl: 'https://images.unsplash.com/photo-1589003077984-894e762f8741' },
-    { id: 7, name: 'Audio Interface for Home Studio', price: 149.99, imageUrl: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04' }
-  ]
-};
-
-const ProductPage = () => {
+const ProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [activeImageId, setActiveImageId] = useState<number>(0);
-  const [isWishlist, setIsWishlist] = useState(false);
+  const [isBargaining, setIsBargaining] = useState(false);
+  const token = localStorage.getItem('token');
+  const userId = localStorage.getItem('userId');
   
   // Fetch product data
-  const { data: productResponse, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['product', id],
     queryFn: async () => {
-      if (!id) return null;
       const { data } = await axios.get(`/api/products/${id}`);
       return data;
     },
-    enabled: !!id,
   });
+
+  const product: Product | undefined = data?.product;
   
-  const product = productResponse?.product;
-  
-  // Use sample data as fallback if real data is not available
-  const displayData = product || sampleProductData;
-  
-  // Prepare images for display
-  const images = product ? 
-    product.images.map((img: string | { url: string }, index: number) => ({
-      id: index,
-      url: typeof img === 'string' ? img : img.url
-    })) : 
-    sampleProductData.images;
-  
-  // Set the first image as active image when product loads
-  useEffect(() => {
-    if (images?.length > 0) {
-      setActiveImageId(images[0].id);
+  const hasDiscount = product?.discountPercentage && product.discountPercentage > 0;
+
+  // Add to cart mutation
+  const addToCart = async () => {
+    try {
+      if (!token) {
+        toast({
+          title: "Not logged in",
+          description: "Please log in to add items to your cart",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      await axios.post('/api/cart', {
+        productId: id,
+        quantity: 1
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      toast({
+        title: "Success",
+        description: "Item added to cart",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add item to cart",
+        variant: "destructive",
+      });
     }
-  }, [images]);
-  
-  // Get the active image URL
-  const activeImage = images?.find(img => img.id === activeImageId);
-  
-  // Toggle wishlist
-  const toggleWishlist = () => {
-    setIsWishlist(!isWishlist);
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-grow flex items-center justify-center">
-          <p>Loading product details...</p>
-        </main>
-      </div>
-    );
-  }
+  const startBargaining = () => {
+    if (!token) {
+      toast({
+        title: "Not logged in",
+        description: "Please log in to bargain with the seller",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsBargaining(true);
+  };
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-grow flex items-center justify-center">
-          <p>Error loading product details. Please try again later.</p>
-        </main>
+  if (isLoading) return (
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <div className="container mx-auto px-4 py-8 flex-grow flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading product details...</p>
+        </div>
       </div>
-    );
-  }
+      <Footer />
+    </div>
+  );
 
-  // Map API data to display format
-  const sellers = product ? 
-    [
-      { 
-        sellerId: 101, 
-        sellerName: product.sellerRef.storeName || product.sellerRef.name, 
-        sellerRating: 4.8, 
-        sellerReviews: 45,
-        initialPrice: product.price, 
-        stock: 15, 
-        fulfillment: 'BargainBay' as const, 
-        deliveryDays: 2, 
-        responseRate: 98,
-        isPreferredSeller: true,
-        productId: product._id
-      }
-    ] : 
-    sampleProductData.sellers;
+  if (error || !product) return (
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <div className="container mx-auto px-4 py-8 flex-grow">
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-gray-800">Product Not Found</h2>
+          <p className="mt-2 text-gray-600">The product you're looking for doesn't exist or has been removed.</p>
+          <Button asChild className="mt-6">
+            <Link to="/">Back to Home</Link>
+          </Button>
+        </div>
+      </div>
+      <Footer />
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      
-      <main className="flex-grow bg-gray-50">
-        <div className="container mx-auto px-4 py-6">
-          {/* Breadcrumbs */}
-          <nav className="flex text-sm text-gray-500 mb-6">
-            <Link to="/" className="hover:text-brand-600">Home</Link>
-            <ChevronRight className="h-4 w-4 mx-1" />
-            <Link to="/categories" className="hover:text-brand-600">
-              {product?.category || displayData.category}
-            </Link>
-            <ChevronRight className="h-4 w-4 mx-1" />
-            <span className="text-gray-900 font-medium truncate">{product?.title || displayData.name}</span>
-          </nav>
-          
-          {/* Product Overview Section */}
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
-              {/* Product Images */}
-              <div className="space-y-4">
-                <div className="bg-gray-100 rounded-lg overflow-hidden aspect-square flex items-center justify-center">
-                  <img 
-                    src={activeImage?.url || images[0]?.url}
-                    alt={product?.title || displayData.name}
-                    className="max-h-full max-w-full object-contain"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-4 gap-2">
-                  {images.map(image => (
-                    <button
-                      key={image.id}
-                      onClick={() => setActiveImageId(image.id)}
-                      className={cn(
-                        "border-2 rounded-md overflow-hidden aspect-square",
-                        activeImageId === image.id ? "border-brand-500" : "border-gray-200"
-                      )}
-                    >
+      <div className="container mx-auto px-4 py-8 flex-grow">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Product Images */}
+          <div className="relative">
+            <Carousel className="w-full">
+              <CarouselContent>
+                {product.images && product.images.map((image, index) => (
+                  <CarouselItem key={index}>
+                    <div className="aspect-square relative">
                       <img 
-                        src={image.url}
-                        alt={`${product?.title || displayData.name} view ${image.id}`}
-                        className="w-full h-full object-cover"
+                        src={typeof image === 'string' ? image : (image as any).url} 
+                        alt={`${product.title} - Image ${index + 1}`}
+                        className="w-full h-full object-cover rounded-lg"
                       />
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Product Details */}
-              <div>
-                <div className="mb-4">
-                  <div className="flex items-center justify-between">
-                    <Badge className="bg-brand-100 text-brand-800 hover:bg-brand-200">
-                      {product?.category || displayData.category}
-                    </Badge>
-                    <div className="flex space-x-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={toggleWishlist}
-                        className={isWishlist ? "text-red-500" : "text-gray-400"}
-                      >
-                        <Heart className={cn("h-5 w-5", isWishlist && "fill-current")} />
-                      </Button>
-                      <Button variant="ghost" size="icon">
-                        <Share className="h-5 w-5" />
-                      </Button>
                     </div>
-                  </div>
-                  <h1 className="text-2xl md:text-3xl font-bold mt-2">{product?.title || displayData.name}</h1>
-                  <div className="text-sm text-gray-500 mt-1">By {product?.sellerRef?.name || displayData.brand}</div>
-                </div>
-                
-                <div className="flex items-center mb-4">
-                  <div className="flex items-center">
-                    <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                    <span className="font-medium ml-1">{(product?.rating || displayData.rating).toFixed(1)}</span>
-                  </div>
-                  <span className="mx-2 text-gray-300">|</span>
-                  <span className="text-gray-500">{product?.reviewCount || displayData.reviewCount} reviews</span>
-                  <span className="mx-2 text-gray-300">|</span>
-                  <span className="text-brand-600 flex items-center">
-                    <TrendingUp className="h-4 w-4 mr-1" />
-                    {sellers.length} sellers available
-                  </span>
-                </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="left-2" />
+              <CarouselNext className="right-2" />
+            </Carousel>
+          </div>
 
-                {product?.allowBargaining && (
-                  <div className="bg-blue-50 border border-blue-100 rounded-md p-4 mb-6">
-                    <div className="flex items-start">
-                      <Award className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
-                      <div>
-                        <h3 className="font-semibold text-blue-800">Bargaining Available</h3>
-                        <p className="text-sm text-blue-700">
-                          This product supports real-time price negotiation. Start a chat with any seller to bargain and get the best price!
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+          {/* Product Info */}
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">{product.title}</h1>
+              <div className="mt-2 flex items-center space-x-2">
+                <Badge variant="outline">{product.category}</Badge>
+                {product.allowBargaining && (
+                  <Badge variant="secondary">Bargaining Available</Badge>
                 )}
-                
-                <div className="mb-6">
-                  <h3 className="font-medium text-gray-900 mb-2">Description</h3>
-                  <p className="text-gray-700">{product?.description || displayData.description}</p>
-                </div>
-                
-                <div className="mb-6">
-                  <h3 className="font-medium text-gray-900 mb-2">Key Features</h3>
-                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
-                    {(product?.features || displayData.features).map((feature: string, index: number) => (
-                      <li key={index} className="text-gray-700 flex items-center">
-                        <div className="h-1.5 w-1.5 rounded-full bg-brand-500 mr-2"></div>
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {hasDiscount && (
+                  <Badge variant="destructive">Sale {product.discountPercentage}% Off</Badge>
+                )}
+              </div>
+            </div>
 
-                <div className="flex items-center space-x-1 mb-4 text-green-700">
-                  <Shield className="h-5 w-5" />
-                  <span className="text-sm font-medium">All sellers offer money-back guarantee</span>
-                </div>
-              </div>
+            <div className="flex items-baseline space-x-3">
+              {hasDiscount ? (
+                <>
+                  <span className="text-3xl font-bold text-gray-900">${product.discountedPrice.toFixed(2)}</span>
+                  <span className="text-xl text-gray-500 line-through">${product.price.toFixed(2)}</span>
+                </>
+              ) : (
+                <span className="text-3xl font-bold text-gray-900">${product.price.toFixed(2)}</span>
+              )}
             </div>
-          </div>
-          
-          {/* Seller Offers Section */}
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-8">
-            <div className="p-6">
-              <h2 className="text-xl font-bold mb-6">Compare Seller Offers</h2>
+
+            <p className="text-gray-700 leading-relaxed">{product.description}</p>
+
+            <div className="flex flex-col space-y-3">
+              <Button onClick={addToCart} className="w-full">Add to Cart</Button>
               
-              <div className="space-y-4">
-                {sellers.map((seller) => (
-                  <SellerOffer key={seller.sellerId} {...seller} />
-                ))}
-              </div>
+              {product.allowBargaining && (
+                <Dialog open={isBargaining} onOpenChange={setIsBargaining}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full" onClick={startBargaining}>
+                      Bargain with Seller
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Bargain for {product.title}</DialogTitle>
+                    </DialogHeader>
+                    {userId && (
+                      <BargainingChat
+                        productId={product._id}
+                        sellerId={product.sellerRef._id}
+                        userId={userId}
+                        productPrice={product.price}
+                        minAcceptablePrice={product.minAcceptablePrice}
+                      />
+                    )}
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
-          </div>
-          
-          {/* Product Details Tabs */}
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-8">
-            <div className="p-6">
-              <Tabs defaultValue="specifications">
-                <TabsList className="mb-6">
-                  <TabsTrigger value="specifications">Specifications</TabsTrigger>
-                  <TabsTrigger value="reviews">Reviews ({product?.reviews?.length || displayData.reviews.length})</TabsTrigger>
-                  <TabsTrigger value="shipping">Shipping & Returns</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="specifications" className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                    {Object.entries(product?.specifications || displayData.specifications).map(([key, value]) => (
-                      <div key={key} className="flex">
-                        <span className="font-medium text-gray-700 w-24">{key}:</span>
-                        <span className="text-gray-600">{value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="reviews" className="space-y-6">
-                  <div className="flex items-center mb-4">
-                    <div className="flex items-center mr-4">
-                      <Star className="h-6 w-6 text-yellow-400 fill-yellow-400" />
-                      <span className="text-2xl font-bold ml-2">{product?.rating || displayData.rating.toFixed(1)}</span>
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      Based on {product?.reviewCount || displayData.reviewCount} reviews
-                    </div>
-                  </div>
-                  
-                  {product?.reviews?.map((review) => (
-                    <div key={review.id} className="border-b border-gray-100 pb-4 mb-4 last:border-b-0">
-                      <div className="flex justify-between mb-2">
-                        <div>
-                          <span className="font-medium">{review.username}</span>
-                          <div className="flex items-center mt-1">
-                            {[...Array(5)].map((_, i) => (
-                              <Star 
-                                key={i} 
-                                className={`h-4 w-4 ${
-                                  i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
-                                }`} 
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        <span className="text-sm text-gray-500">{review.date}</span>
-                      </div>
-                      <p className="text-gray-700">{review.comment}</p>
-                    </div>
-                  ))}
-                  
-                  <Button variant="outline" className="w-full">Show All Reviews</Button>
-                </TabsContent>
-                
-                <TabsContent value="shipping" className="space-y-6">
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-medium text-gray-900 mb-2">Shipping Information</h3>
-                      <p className="text-gray-700">
-                        Shipping times vary by seller. Typically, items are shipped within 1-2 business days.
-                        Delivery times are displayed on each seller's offer card.
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <h3 className="font-medium text-gray-900 mb-2">Return Policy</h3>
-                      <p className="text-gray-700">
-                        All products can be returned within 30 days of delivery for a full refund.
-                        Products must be in original packaging and unused condition.
-                        Return shipping fees may apply based on the seller's policy.
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <h3 className="font-medium text-gray-900 mb-2">BargainBay Guarantee</h3>
-                      <p className="text-gray-700">
-                        All purchases are protected by our BargainBay Guarantee.
-                        If your item doesn't arrive or isn't as described, we'll help you get a refund.
-                      </p>
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </div>
-          </div>
-          
-          {/* Related Products */}
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold">You May Also Like</h2>
-                <Link to="/related" className="text-brand-600 font-medium flex items-center">
-                  View all <ChevronRight className="h-4 w-4 ml-1" />
-                </Link>
+
+            {product.sellerRef && (
+              <div className="border-t pt-4">
+                <p className="text-sm text-gray-500">Sold by: <span className="font-medium text-gray-700">{product.sellerRef.storeName || product.sellerRef.name}</span></p>
               </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {(product?.relatedProducts || displayData.relatedProducts).map((product) => (
-                  <div key={product.id} className="bg-white border rounded-lg overflow-hidden">
-                    <Link to={`/product/${product.id}`}>
-                      <div className="h-48 overflow-hidden bg-gray-100">
-                        <img
-                          src={product.imageUrl}
-                          alt={product.name}
-                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-                      <div className="p-3">
-                        <h3 className="font-medium text-gray-900 line-clamp-2 h-12">{product.name}</h3>
-                        <div className="text-lg font-semibold text-brand-600 mt-2">${product.price.toFixed(2)}</div>
-                      </div>
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            </div>
+            )}
           </div>
         </div>
-      </main>
-      
+
+        <div className="mt-12">
+          <Tabs defaultValue="details">
+            <TabsList className="w-full max-w-md mx-auto grid grid-cols-2">
+              <TabsTrigger value="details">Product Details</TabsTrigger>
+              <TabsTrigger value="shipping">Shipping Info</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="details" className="mt-6">
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Specifications</h3>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="font-medium text-gray-700">Category</div>
+                    <div className="col-span-2">{product.category}</div>
+                  </div>
+                  <Separator />
+                  
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="font-medium text-gray-700">Listed On</div>
+                    <div className="col-span-2">
+                      {new Date(product.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <Separator />
+                  
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="font-medium text-gray-700">Bargaining</div>
+                    <div className="col-span-2">
+                      {product.allowBargaining ? 'Available' : 'Not Available'}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="shipping" className="mt-6">
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Shipping Information</h3>
+                <p className="text-gray-700">
+                  Standard shipping takes 3-5 business days. Express shipping options are available at checkout.
+                </p>
+                <p className="mt-4 text-gray-700">
+                  Returns accepted within 30 days of delivery. See our return policy for more details.
+                </p>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
       <Footer />
     </div>
   );

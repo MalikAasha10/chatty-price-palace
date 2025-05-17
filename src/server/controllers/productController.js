@@ -1,4 +1,3 @@
-
 const Product = require('../models/Product');
 
 // @desc    Create a new product
@@ -15,6 +14,7 @@ exports.createProduct = async (req, res) => {
       req.body.isOnDeal = true;
     }
     
+    // Create product
     const product = await Product.create(req.body);
     
     res.status(201).json({
@@ -22,6 +22,7 @@ exports.createProduct = async (req, res) => {
       product
     });
   } catch (error) {
+    console.error('Error creating product:', error);
     res.status(500).json({
       success: false,
       message: error.message

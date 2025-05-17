@@ -23,6 +23,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,6 +41,9 @@ interface Product {
   description: string;
   price: number;
   images: string[];
+  category?: string;
+  allowBargaining?: boolean;
+  discountPercentage?: number;
 }
 
 interface ProductFormProps {
@@ -42,11 +53,24 @@ interface ProductFormProps {
   isEditing: boolean;
 }
 
+const CATEGORIES = [
+  "Electronics",
+  "Fashion",
+  "Home & Kitchen",
+  "Sports & Outdoors",
+  "Beauty",
+  "Toys & Games",
+  "Other"
+];
+
 const productSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().min(1, "Description is required"),
   price: z.coerce.number().min(0.01, "Price must be greater than 0"),
   images: z.array(z.string()).min(1, "At least one image is required"),
+  category: z.string().min(1, "Category is required"),
+  allowBargaining: z.boolean().default(true),
+  discountPercentage: z.coerce.number().min(0).max(100).default(0),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -62,6 +86,9 @@ const ProductForm = ({ isOpen, onClose, product, isEditing }: ProductFormProps) 
     description: product?.description || "",
     price: product?.price || 0,
     images: product?.images || [],
+    category: product?.category || "Other",
+    allowBargaining: product?.allowBargaining !== undefined ? product.allowBargaining : true,
+    discountPercentage: product?.discountPercentage || 0,
   };
 
   const form = useForm<ProductFormValues>({
@@ -76,6 +103,9 @@ const ProductForm = ({ isOpen, onClose, product, isEditing }: ProductFormProps) 
         description: product.description,
         price: product.price,
         images: product.images,
+        category: product.category || "Other",
+        allowBargaining: product.allowBargaining !== undefined ? product.allowBargaining : true,
+        discountPercentage: product.discountPercentage || 0,
       });
       setImageUrls(product.images);
     }
@@ -83,7 +113,7 @@ const ProductForm = ({ isOpen, onClose, product, isEditing }: ProductFormProps) 
 
   const addProduct = useMutation({
     mutationFn: async (data: ProductFormValues) => {
-      return axios.post("http://localhost:5000/api/products", data, {
+      return axios.post("/api/products", data, {
         headers: { Authorization: `Bearer ${token}` },
       });
     },
@@ -95,10 +125,10 @@ const ProductForm = ({ isOpen, onClose, product, isEditing }: ProductFormProps) 
       });
       onClose();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to add product",
+        description: error.response?.data?.message || "Failed to add product",
         variant: "destructive",
       });
     },
@@ -107,7 +137,7 @@ const ProductForm = ({ isOpen, onClose, product, isEditing }: ProductFormProps) 
   const updateProduct = useMutation({
     mutationFn: async (data: ProductFormValues) => {
       if (!product?._id) throw new Error("Product ID is missing");
-      return axios.put(`http://localhost:5000/api/products/${product._id}`, data, {
+      return axios.put(`/api/products/${product._id}`, data, {
         headers: { Authorization: `Bearer ${token}` },
       });
     },
@@ -119,10 +149,10 @@ const ProductForm = ({ isOpen, onClose, product, isEditing }: ProductFormProps) 
       });
       onClose();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to update product",
+        description: error.response?.data?.message || "Failed to update product",
         variant: "destructive",
       });
     },
@@ -203,25 +233,95 @@ const ProductForm = ({ isOpen, onClose, product, isEditing }: ProductFormProps) 
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="price"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Price ($)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Price ($)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {CATEGORIES.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="discountPercentage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Discount Percentage (%)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        placeholder="0"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="allowBargaining"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-8">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Allow Bargaining</FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
