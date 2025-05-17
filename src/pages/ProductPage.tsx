@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
@@ -192,9 +191,10 @@ const ProductPage: React.FC = () => {
                       <BargainingChat
                         productId={product._id}
                         sellerId={product.sellerRef._id}
-                        userId={userId}
-                        productPrice={product.price}
-                        minAcceptablePrice={product.minAcceptablePrice}
+                        sellerName={product.sellerRef.name || product.sellerRef.storeName}
+                        initialPrice={product.price}
+                        onClose={() => setIsBargaining(false)}
+                        onPriceChange={(newPrice) => setCurrentPrice(newPrice)}
                       />
                     )}
                   </DialogContent>
