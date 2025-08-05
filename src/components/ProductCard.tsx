@@ -6,48 +6,65 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 interface ProductCardProps {
-  id: string | number;
-  name: string;
-  imageUrl: string;
+  _id?: string;
+  id?: string | number;
+  title?: string;
+  name?: string;
+  images?: string[] | Array<{url: string}>;
+  imageUrl?: string;
   price: number;
+  discountedPrice?: number;
+  discountPercentage?: number;
   originalPrice?: number;
-  rating: number;
-  sellerCount: number;
+  rating?: number;
+  sellerCount?: number;
   category: string;
   bestSeller?: boolean;
   isBargainable?: boolean;
+  allowBargaining?: boolean;
+  sellerRef?: {
+    name: string;
+    storeName: string;
+  };
+  isOnDeal?: boolean;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({
-  id,
-  name,
-  imageUrl,
-  price,
-  originalPrice,
-  rating,
-  sellerCount,
-  category,
-  bestSeller = false,
-  isBargainable = false
-}) => {
+const ProductCard: React.FC<ProductCardProps> = (props) => {
   const [isHovered, setIsHovered] = useState(false);
-  const discount = originalPrice ? Math.round((1 - price / originalPrice) * 100) : 0;
+  
+  // Handle both old and new prop structures
+  const productId = props._id || props.id;
+  const productName = props.title || props.name || '';
+  const productPrice = props.discountedPrice || props.price;
+  const originalPrice = props.price !== props.discountedPrice ? props.price : props.originalPrice;
+  const discount = props.discountPercentage || (originalPrice ? Math.round((1 - productPrice / originalPrice) * 100) : 0);
+  const isBargainable = props.allowBargaining || props.isBargainable || false;
+  const rating = props.rating || 4.5; // Default rating if not provided
+  const sellerName = props.sellerRef?.storeName || props.sellerRef?.name || 'Unknown Seller';
+  
+  // Get first image URL
+  let imageUrl = props.imageUrl;
+  if (!imageUrl && props.images && props.images.length > 0) {
+    const firstImage = props.images[0];
+    imageUrl = typeof firstImage === 'string' ? firstImage : firstImage.url;
+  }
+  imageUrl = imageUrl || "/placeholder.svg";
   
   return (
     <Link 
-      to={`/product/${id}`}
+      to={`/product/${productId}`}
       className="group bg-white border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="relative h-48 overflow-hidden bg-gray-100">
         <img
-          src={imageUrl || "/placeholder.svg"} 
-          alt={name}
+          src={imageUrl} 
+          alt={productName}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
 
-        {bestSeller && (
+        {props.bestSeller && (
           <div className="absolute top-2 left-2">
             <Badge className="bg-amber-500 text-white px-2 py-1 flex items-center gap-1">
               <Sparkles className="h-3 w-3" />
@@ -58,7 +75,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
         {isBargainable && (
           <div className="absolute top-2 left-2 flex flex-col gap-2">
-            {bestSeller && <div className="mb-1"></div>} {/* Spacer if best seller badge exists */}
+            {props.bestSeller && <div className="mb-1"></div>} {/* Spacer if best seller badge exists */}
             <Badge className="bg-blue-500 text-white px-2 py-1 flex items-center gap-1">
               <Tag className="h-3 w-3" />
               <span className="text-xs font-medium">Bargainable</span>
@@ -77,10 +94,15 @@ const ProductCard: React.FC<ProductCardProps> = ({
       
       <div className="p-3">
         <div className="flex items-center text-sm text-gray-500 mb-1">
-          <span>{category}</span>
+          <span>{props.category}</span>
         </div>
         
-        <h3 className="font-medium text-gray-900 mb-1 line-clamp-2 h-12">{name}</h3>
+        <h3 className="font-medium text-gray-900 mb-1 line-clamp-2 h-12">{productName}</h3>
+        
+        {/* Seller Information */}
+        <div className="text-xs text-gray-500 mb-2">
+          Sold by: <span className="font-medium">{sellerName}</span>
+        </div>
         
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center">
@@ -88,13 +110,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
               <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
               <span className="text-sm font-medium ml-1">{rating.toFixed(1)}</span>
             </div>
-            <span className="text-xs text-gray-500">({sellerCount} {sellerCount === 1 ? 'seller' : 'sellers'})</span>
           </div>
         </div>
         
         <div className="flex items-baseline mb-1">
-          <span className="text-lg font-semibold text-brand-600">${price.toFixed(2)}</span>
-          {originalPrice && (
+          <span className="text-lg font-semibold text-brand-600">${productPrice.toFixed(2)}</span>
+          {originalPrice && originalPrice !== productPrice && (
             <span className="text-sm text-gray-500 line-through ml-2">${originalPrice.toFixed(2)}</span>
           )}
         </div>

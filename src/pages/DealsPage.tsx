@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, Flame, HandCoins, Percent, ShoppingBag, Tag, Timer } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { useDealsProducts, useBargainableProducts } from '@/hooks/useProducts';
+import { Product } from '@/hooks/useProducts';
 
 // Sample deal products data
 const bargainProducts = [
@@ -292,6 +295,10 @@ const categoryDeals = {
 const DealsPage = () => {
   const [activeCategory, setActiveCategory] = useState('Electronics');
   
+  // Fetch real data from API
+  const { data: dealsData, isLoading: dealsLoading } = useDealsProducts();
+  const { data: bargainableData, isLoading: bargainableLoading } = useBargainableProducts();
+  
   // Function to format time remaining
   const formatTimeRemaining = (hours: number) => {
     if (hours < 1) return "Ends soon!";
@@ -341,11 +348,22 @@ const DealsPage = () => {
             <p className="text-gray-600 mb-6">
               Start a negotiation with sellers and get the best possible price on these items.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {bargainProducts.map((product) => (
-                <ProductCard key={product.id} {...product} />
-              ))}
-            </div>
+            {bargainableLoading ? (
+              <div className="text-center py-10">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+                <p className="mt-4 text-gray-600">Loading bargainable products...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {(bargainableData || []).slice(0, 8).map((product: Product) => (
+                  <ProductCard 
+                    key={product._id} 
+                    {...product}
+                    isBargainable={product.allowBargaining}
+                  />
+                ))}
+              </div>
+            )}
           </section>
           
           {/* Limited-Time Discounts */}

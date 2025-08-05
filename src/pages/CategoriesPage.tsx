@@ -4,6 +4,9 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
 import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
+import { useProductsByCategory } from '@/hooks/useProducts';
+import { Product } from '@/hooks/useProducts';
 import { 
   Select,
   SelectContent,
@@ -69,65 +72,6 @@ const categoriesData = [
   }
 ];
 
-// Sample products data
-const productsData = [
-  {
-    id: 1,
-    name: 'Premium Wireless Noise-Cancelling Headphones',
-    imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
-    price: 199.99,
-    originalPrice: 299.99,
-    rating: 4.8,
-    sellerCount: 7,
-    category: 'Electronics',
-    subcategory: 'Audio',
-    bestSeller: true
-  },
-  {
-    id: 2,
-    name: 'Ultra HD Smart TV 55-inch',
-    imageUrl: 'https://images.unsplash.com/photo-1593784991095-a205069470b6',
-    price: 549.99,
-    originalPrice: 699.99,
-    rating: 4.6,
-    sellerCount: 12,
-    category: 'Electronics',
-    subcategory: 'TVs'
-  },
-  {
-    id: 5,
-    name: 'Smart Fitness Watch with Heart Rate Monitor',
-    imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30',
-    price: 129.99,
-    originalPrice: 159.99,
-    rating: 4.4,
-    sellerCount: 6,
-    category: 'Electronics',
-    subcategory: 'Wearables'
-  },
-  {
-    id: 3,
-    name: 'Men\'s Casual Cotton T-Shirt',
-    imageUrl: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab',
-    price: 24.99,
-    originalPrice: 39.99,
-    rating: 4.5,
-    sellerCount: 15,
-    category: 'Fashion',
-    subcategory: 'Men\'s Clothing'
-  },
-  {
-    id: 4,
-    name: 'Women\'s Running Shoes',
-    imageUrl: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff',
-    price: 89.99,
-    originalPrice: 119.99,
-    rating: 4.7,
-    sellerCount: 8,
-    category: 'Fashion',
-    subcategory: 'Shoes'
-  }
-];
 
 const CategoriesPage = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -135,37 +79,40 @@ const CategoriesPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('featured');
 
-  // Filter products based on selection and search
-  const filteredProducts = productsData.filter(product => {
-    // Filter by category if selected
-    if (selectedCategory && product.category !== selectedCategory) {
-      return false;
-    }
-    
-    // Filter by subcategory if selected
-    if (selectedSubcategory && product.subcategory !== selectedSubcategory) {
-      return false;
-    }
-    
+  // Fetch products using the API
+  const { data: productsData, isLoading, error } = useQuery({
+    queryKey: ['products', selectedCategory],
+    queryFn: async () => {
+      const url = selectedCategory 
+        ? `/api/products?category=${selectedCategory}`
+        : '/api/products';
+      const response = await fetch(url);
+      const data = await response.json();
+      return data.products || [];
+    },
+  });
+
+  // Filter products based on search query (category is already filtered by API)
+  const filteredProducts = (productsData || []).filter((product: Product) => {
     // Filter by search query
-    if (searchQuery && !product.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+    if (searchQuery && !product.title.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
-    
     return true;
   });
 
   // Sort products
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
+  const sortedProducts = [...filteredProducts].sort((a: Product, b: Product) => {
     if (sortOrder === 'price-low') {
-      return a.price - b.price;
+      return (a.discountedPrice || a.price) - (b.discountedPrice || b.price);
     } else if (sortOrder === 'price-high') {
-      return b.price - a.price;
+      return (b.discountedPrice || b.price) - (a.discountedPrice || a.price);
     } else if (sortOrder === 'rating') {
-      return b.rating - a.rating;
+      // For now, sort by creation date as we don't have ratings
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     }
-    // Default is 'featured' - no specific sorting
-    return 0;
+    // Default is 'featured' - sort by newest
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
   // Get subcategories for selected category
@@ -328,10 +275,23 @@ const CategoriesPage = () => {
           
           {/* Products Grid */}
           <div className="mt-8">
-            {sortedProducts.length > 0 ? (
+            {isLoading ? (
+              <div className="text-center py-10">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+                <p className="mt-4 text-gray-600">Loading products...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-10">
+                <p className="text-lg text-red-500">Error loading products. Please try again.</p>
+              </div>
+            ) : sortedProducts.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {sortedProducts.map(product => (
-                  <ProductCard key={product.id} {...product} />
+                {sortedProducts.map((product: Product) => (
+                  <ProductCard 
+                    key={product._id} 
+                    {...product}
+                    isBargainable={product.allowBargaining}
+                  />
                 ))}
               </div>
             ) : (
