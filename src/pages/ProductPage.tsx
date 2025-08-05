@@ -194,6 +194,9 @@ const ProductPage: React.FC = () => {
                         sellerName={product.sellerRef.name || product.sellerRef.storeName}
                         initialPrice={product.price}
                         onClose={() => setIsBargaining(false)}
+                        onPriceChange={(newPrice) => {
+                          console.log('Price updated to:', newPrice);
+                        }}
                       />
                     )}
                   </DialogContent>
