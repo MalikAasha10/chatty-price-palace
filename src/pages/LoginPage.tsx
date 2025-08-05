@@ -161,7 +161,7 @@ const LoginPage = () => {
             </div>
           </form>
 
-          <div className="relative my-6">
+          {/* <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t"></span>
             </div>
@@ -173,7 +173,7 @@ const LoginPage = () => {
           <div className="grid grid-cols-2 gap-4">
             <Button variant="outline" className="w-full">Google</Button>
             <Button variant="outline" className="w-full">Facebook</Button>
-          </div>
+          </div> */}
 
           <div className="mt-6 text-center text-sm">
             Don't have an account?{" "}

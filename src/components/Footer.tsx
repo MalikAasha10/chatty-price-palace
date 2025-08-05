@@ -9,7 +9,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* About Section */}
           <div>
-            <h3 className="text-lg font-semibold text-white mb-4">BargainBay</h3>
+            <h3 className="text-lg font-semibold text-white mb-4">BargainNow</h3>
             <p className="text-sm mb-4">
               The first e-commerce platform that allows real-time bargaining with multiple sellers,
               providing you with the best deals possible.
@@ -86,14 +86,14 @@ const Footer = () => {
               </li>
               <li className="flex items-center">
                 <Mail className="h-5 w-5 mr-2" />
-                <span>support@bargainbay.com</span>
+                <span>support@bargainnow.com</span>
               </li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-6 text-sm text-center">
-          <p>&copy; {new Date().getFullYear()} BargainBay. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} BargainNow. All rights reserved.</p>
           <p className="mt-1">
             Designed and developed for competitive e-commerce with real-time bargaining.
           </p>
