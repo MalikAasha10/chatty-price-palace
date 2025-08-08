@@ -53,7 +53,7 @@ const BargainingChat: React.FC<BargainingChatProps> = ({
     }
     
     // Create socket connection
-    const socketInstance = socketIO('http://localhost:5000', {
+    const socketInstance = socketIO(undefined, {
       auth: {
         token
       }
@@ -158,7 +158,7 @@ const BargainingChat: React.FC<BargainingChatProps> = ({
       if (!token) return;
       
       const response = await axios.post(
-        'http://localhost:5000/api/bargain',
+        '/api/bargain',
         {
           productId,
           initialOffer: initialPrice * 0.9 // Start with 10% off as initial offer

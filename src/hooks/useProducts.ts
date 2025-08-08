@@ -61,7 +61,7 @@ export const useDealsProducts = () => {
   return useQuery({
     queryKey: ['dealsProducts'],
     queryFn: async () => {
-      const { data } = await axios.get('/api/products?deals=true');
+      const { data } = await axios.get('/api/products?deals=true&bargainable=true');
       return data.products;
     }
   });

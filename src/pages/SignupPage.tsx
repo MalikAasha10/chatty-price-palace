@@ -90,9 +90,9 @@ const SignupPage = () => {
           storeName: formData.businessName
         };
         
-        response = await axios.post('http://localhost:5000/api/auth/seller/register', sellerData);
+        response = await axios.post('/api/auth/seller/register', sellerData);
       } else {
-        response = await axios.post('http://localhost:5000/api/auth/user/register', userData);
+        response = await axios.post('/api/auth/user/register', userData);
       }
       
       // Handle successful registration

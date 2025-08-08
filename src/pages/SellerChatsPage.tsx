@@ -39,7 +39,7 @@ const SellerChatsPage = () => {
       return;
     }
 
-    const socketInstance = io('http://localhost:5000', {
+    const socketInstance = io(undefined, {
       auth: { token }
     });
 
@@ -119,7 +119,7 @@ const SellerChatsPage = () => {
   const fetchSellerBargains = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/bargain/seller', {
+      const response = await axios.get('/api/bargain/seller', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -169,7 +169,7 @@ const SellerChatsPage = () => {
       
       // Fetch detailed chat data
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:5000/api/bargain/${chatId}`, {
+      const response = await axios.get(`/api/bargain/${chatId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

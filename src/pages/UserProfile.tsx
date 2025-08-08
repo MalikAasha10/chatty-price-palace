@@ -75,7 +75,7 @@ const UserProfile = () => {
 
     try {
       setIsLoading(true);
-      const response = await axios.get(`http://localhost:5000/api/users/${userData._id}`, {
+      const response = await axios.get(`/api/users/${userData._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -105,7 +105,7 @@ const UserProfile = () => {
 
     try {
       setOrderLoading(true);
-      const response = await axios.get(`http://localhost:5000/api/users/${userData._id}/orders`, {
+      const response = await axios.get(`/api/users/${userData._id}/orders`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -145,7 +145,7 @@ const UserProfile = () => {
     try {
       setIsLoading(true);
       const response = await axios.put(
-        `http://localhost:5000/api/users/${userData._id}`,
+        `/api/users/${userData._id}`,
         formData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -196,7 +196,7 @@ const UserProfile = () => {
     try {
       setIsLoading(true);
       const response = await axios.put(
-        `http://localhost:5000/api/users/${userData._id}/password`,
+        `/api/users/${userData._id}/password`,
         {
           currentPassword: passwordData.currentPassword,
           newPassword: passwordData.newPassword

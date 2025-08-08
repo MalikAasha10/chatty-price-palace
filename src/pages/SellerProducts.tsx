@@ -56,7 +56,7 @@ const SellerProducts = () => {
   const { data: products, isLoading, error } = useQuery({
     queryKey: ["sellerProducts"],
     queryFn: async () => {
-      const response = await axios.get("http://localhost:5000/api/products/seller/my-products", {
+      const response = await axios.get("/api/products/seller/my-products", {
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.data.products;
@@ -66,7 +66,7 @@ const SellerProducts = () => {
   // Delete product mutation
   const deleteProductMutation = useMutation({
     mutationFn: async (productId: string) => {
-      return axios.delete(`http://localhost:5000/api/products/${productId}`, {
+      return axios.delete(`/api/products/${productId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
     },

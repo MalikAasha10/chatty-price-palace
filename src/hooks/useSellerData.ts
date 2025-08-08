@@ -13,7 +13,7 @@ export const useSellerData = () => {
   useEffect(() => {
     const fetchSellerInfo = async () => {
       try {
-        const profileRes = await axios.get('http://localhost:5000/api/auth/me', {
+        const profileRes = await axios.get('/api/auth/me', {
           headers: { Authorization: `Bearer ${token}` },
         });
 

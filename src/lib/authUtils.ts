@@ -63,10 +63,10 @@ export const registerUser = async (formData: SignupFormData, role: UserRole) => 
       };
       
       console.log("Registering seller with data:", sellerData);
-      return await axios.post('http://localhost:5000/api/auth/seller/register', sellerData);
+      return await axios.post('/api/auth/seller/register', sellerData);
     } else {
       console.log("Registering user with data:", userData);
-      return await axios.post('http://localhost:5000/api/auth/user/register', userData);
+      return await axios.post('/api/auth/user/register', userData);
     }
   } catch (error) {
     console.error("Registration error:", error);

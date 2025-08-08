@@ -36,8 +36,8 @@ const LoginPage = () => {
       // ✅ Dynamically choose the endpoint based on the role
       const loginUrl =
         role === 'seller'
-          ? 'http://localhost:5000/api/auth/seller/login'
-          : 'http://localhost:5000/api/auth/user/login';
+          ? '/api/auth/seller/login'
+          : '/api/auth/user/login';
   
       const res = await axios.post(loginUrl, {
         email,

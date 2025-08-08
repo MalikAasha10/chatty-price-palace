@@ -112,7 +112,7 @@ const ProductForm = ({ isOpen, onClose, product, isEditing }: ProductFormProps) 
 
   const addProduct = useMutation({
     mutationFn: async (data: ProductFormValues) => {
-      return axios.post("http://localhost:5000/api/products", data, {
+      return axios.post("/api/products", data, {
         headers: { Authorization: `Bearer ${token}` },
       });
     },
@@ -136,7 +136,7 @@ const ProductForm = ({ isOpen, onClose, product, isEditing }: ProductFormProps) 
   const updateProduct = useMutation({
     mutationFn: async (data: ProductFormValues) => {
       if (!product?._id) throw new Error("Product ID is missing");
-      return axios.put(`http://localhost:5000/api/products/${product._id}`, data, {
+      return axios.put(`/api/products/${product._id}`, data, {
         headers: { Authorization: `Bearer ${token}` },
       });
     },
