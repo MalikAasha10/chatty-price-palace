@@ -202,6 +202,7 @@ exports.getMe = async (req, res) => {
       user: req.user
     });
   } catch (error) {
+    console.error('getMe error:', error);
     res.status(500).json({
       success: false,
       message: error.message

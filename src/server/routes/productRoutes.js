@@ -16,12 +16,14 @@ const router = express.Router();
 // Public routes
 router.get('/', getProducts);
 router.get('/featured', getFeaturedProducts);
-router.get('/:id', getProduct);
 
 // Protected seller routes
+router.get('/seller/my-products', protect, sellerOnly, getSellerProducts);
 router.post('/', protect, sellerOnly, createProduct);
 router.put('/:id', protect, sellerOnly, updateProduct);
 router.delete('/:id', protect, sellerOnly, deleteProduct);
-router.get('/seller/my-products', protect, sellerOnly, getSellerProducts);
+
+// Public route for single product (must be last to avoid route conflicts)
+router.get('/:id', getProduct);
 
 module.exports = router;

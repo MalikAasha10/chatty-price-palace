@@ -61,6 +61,7 @@ exports.getProducts = async (req, res) => {
       products
     });
   } catch (error) {
+    console.error('getProducts error:', error);
     res.status(500).json({
       success: false,
       message: error.message
@@ -95,6 +96,7 @@ exports.getFeaturedProducts = async (req, res) => {
       bargainableProducts
     });
   } catch (error) {
+    console.error('getFeaturedProducts error:', error);
     res.status(500).json({
       success: false,
       message: error.message
