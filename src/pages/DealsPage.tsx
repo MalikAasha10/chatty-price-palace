@@ -295,8 +295,7 @@ const categoryDeals = {
 const DealsPage = () => {
   const [activeCategory, setActiveCategory] = useState('Electronics');
   
-  // Fetch real data from API
-  const { data: dealsData, isLoading: dealsLoading } = useDealsProducts();
+  // Fetch real data from API - focus on bargainable products
   const { data: bargainableData, isLoading: bargainableLoading } = useBargainableProducts();
   
   // Function to format time remaining

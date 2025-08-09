@@ -26,12 +26,16 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import BargainingChat from '@/components/BargainingChat';
 import { Product } from '@/hooks/useProducts';
+import { useAddToCart } from '@/hooks/useCart';
 
 const ProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [isBargaining, setIsBargaining] = useState(false);
   const token = localStorage.getItem('token');
   const userId = localStorage.getItem('userId');
+  
+  // Cart mutation
+  const addToCartMutation = useAddToCart();
   
   // Fetch product data
   const { data, isLoading, error } = useQuery({
@@ -46,36 +50,23 @@ const ProductPage: React.FC = () => {
   
   const hasDiscount = product?.discountPercentage && product.discountPercentage > 0;
 
-  // Add to cart mutation
-  const addToCart = async () => {
-    try {
-      if (!token) {
-        toast({
-          title: "Not logged in",
-          description: "Please log in to add items to your cart",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      await axios.post('/api/cart', {
-        productId: id,
-        quantity: 1
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
+  // Add to cart function
+  const addToCart = () => {
+    if (!token) {
       toast({
-        title: "Success",
-        description: "Item added to cart",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add item to cart",
+        title: "Not logged in",
+        description: "Please log in to add items to your cart",
         variant: "destructive",
       });
+      return;
     }
+
+    if (!id) return;
+    
+    addToCartMutation.mutate({
+      productId: id,
+      quantity: 1
+    });
   };
 
   const startBargaining = () => {
@@ -174,7 +165,13 @@ const ProductPage: React.FC = () => {
             <p className="text-gray-700 leading-relaxed">{product.description}</p>
 
             <div className="flex flex-col space-y-3">
-              <Button onClick={addToCart} className="w-full">Add to Cart</Button>
+              <Button 
+                onClick={addToCart} 
+                className="w-full"
+                disabled={addToCartMutation.isPending}
+              >
+                {addToCartMutation.isPending ? 'Adding...' : 'Add to Cart'}
+              </Button>
               
               {product.allowBargaining && (
                 <Dialog open={isBargaining} onOpenChange={setIsBargaining}>

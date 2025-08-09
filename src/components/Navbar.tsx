@@ -20,12 +20,17 @@ import {
   LogOut
 } from 'lucide-react';
 import axios from 'axios';
+import { useCart } from '@/hooks/useCart';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState<any>(null);
   const [userRole, setUserRole] = useState<string>('');
+  
+  // Cart data - only for regular users
+  const { data: cartData } = useCart();
+  const cartItemsCount = cartData?.items?.length || 0;
 
   // Check authentication status and fetch user data
   useEffect(() => {
@@ -164,9 +169,11 @@ const Navbar = () => {
                   <Link to="/cart">
                     <Button variant="ghost" size="icon" className="relative">
                       <ShoppingCart className="h-5 w-5" />
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                        2
-                      </span>
+                      {cartItemsCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                          {cartItemsCount}
+                        </span>
+                      )}
                     </Button>
                   </Link>
                 )}
@@ -250,12 +257,16 @@ const Navbar = () => {
               </div>
             )}
 
-            <Link to="/cart" className="flex items-center justify-between py-2 border-b border-gray-100">
-              <span className="text-gray-700">Shopping Cart</span>
-              <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                2
-              </span>
-            </Link>
+            {userRole !== 'seller' && (
+              <Link to="/cart" className="flex items-center justify-between py-2 border-b border-gray-100">
+                <span className="text-gray-700">Shopping Cart</span>
+                {cartItemsCount > 0 && (
+                  <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {cartItemsCount}
+                  </span>
+                )}
+              </Link>
+            )}
           </div>
         </div>
       )}

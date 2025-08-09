@@ -24,6 +24,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/bargain', require('./routes/bargainRoutes'));
+app.use('/api/cart', require('./routes/cartRoutes'));
 
 // Create HTTP server
 const server = http.createServer(app);
