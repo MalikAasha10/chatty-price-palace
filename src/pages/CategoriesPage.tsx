@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 
-// Sample categories with subcategories
+// Categories matching the Product model exactly
 const categoriesData = [
   {
     id: 1,
@@ -57,18 +57,18 @@ const categoriesData = [
     subcategories: ['Skincare', 'Makeup', 'Hair Care', 'Fragrances', 'Tools']
   },
   {
-    id: 6, 
-    name: 'Books',
-    icon: '📚',
-    color: 'bg-yellow-100 text-yellow-800',
-    subcategories: ['Fiction', 'Non-Fiction', 'Educational', 'Comics', 'Children\'s Books'] 
-  },
-  {
-    id: 7,
+    id: 6,
     name: 'Toys & Games',
     icon: '🎮',
     color: 'bg-red-100 text-red-800',
     subcategories: ['Board Games', 'Puzzles', 'Action Figures', 'Educational Toys', 'Outdoor Toys']
+  },
+  {
+    id: 7,
+    name: 'Other',
+    icon: '📦',
+    color: 'bg-gray-100 text-gray-800',
+    subcategories: ['Miscellaneous', 'Unique Items', 'Collectibles', 'Specialty Products']
   }
 ];
 
