@@ -24,7 +24,20 @@ interface CheckoutItem {
 const CheckoutPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { items = [] } = location.state || {};
+  
+  // Get items from state or URL params (for bargaining redirects)
+  const { items: stateItems = [] } = location.state || {};
+  const urlParams = new URLSearchParams(location.search);
+  const urlItems = urlParams.get('items');
+  
+  let items: CheckoutItem[] = stateItems;
+  if (urlItems && !stateItems.length) {
+    try {
+      items = JSON.parse(decodeURIComponent(urlItems));
+    } catch (error) {
+      console.error('Error parsing URL items:', error);
+    }
+  }
   
   const [shippingAddress, setShippingAddress] = useState({
     fullName: '',

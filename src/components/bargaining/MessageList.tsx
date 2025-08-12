@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react';
 import Message from './Message';
 import StatusMessage from './StatusMessage';
 import OfferAcceptButton from './OfferAcceptButton';
+import LiveTypingIndicator from './LiveTypingIndicator';
 
 export interface MessageType {
   id?: number;
@@ -51,15 +52,7 @@ const MessageList: React.FC<MessageListProps> = ({
         />
       ))}
       
-      {/* Typing indicator */}
-      {isTyping && (
-        <div className="flex items-start">
-          <div className="chat-bubble bg-gray-100 p-3 rounded-lg flex items-center">
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            <span>{sellerName} is typing...</span>
-          </div>
-        </div>
-      )}
+      <LiveTypingIndicator isTyping={isTyping} sellerName={sellerName} />
       
       {/* Last message offer acceptance button */}
       {messages.length > 0 && 

@@ -109,9 +109,20 @@ const BargainingChat: React.FC<BargainingChatProps> = ({
         // Update the product price in UI
         onPriceChange(lastOfferAmount);
         
-        // Navigate to checkout after 2 seconds
+        // Navigate to checkout after 2 seconds with item data
         setTimeout(() => {
-          window.location.href = '/checkout';
+          // Prepare checkout data
+          const checkoutItems = [{
+            productId: productId,
+            title: 'Product',
+            price: initialPrice,
+            negotiatedPrice: lastOfferAmount,
+            quantity: 1,
+            image: '/placeholder.svg',
+            seller: sellerName
+          }];
+          
+          window.location.href = `/checkout?items=${encodeURIComponent(JSON.stringify(checkoutItems))}`;
         }, 2000);
       } else if (status === 'rejected') {
         toast({
