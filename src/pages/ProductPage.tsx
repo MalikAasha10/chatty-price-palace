@@ -18,6 +18,7 @@ import { Separator } from '@/components/ui/separator';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -180,9 +181,12 @@ const ProductPage: React.FC = () => {
                       Bargain with Seller
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
+                  <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto" aria-describedby="bargain-description">
                     <DialogHeader>
                       <DialogTitle>Bargain for {product.title}</DialogTitle>
+                      <DialogDescription id="bargain-description">
+                        Negotiate the price with the seller. Maximum 5% discount available.
+                      </DialogDescription>
                     </DialogHeader>
                     {userId && (
                       <BargainingChat

@@ -102,12 +102,17 @@ const BargainingChat: React.FC<BargainingChatProps> = ({
       if (status === 'accepted') {
         toast({
           title: "Offer Accepted!",
-          description: `Your offer of $${lastOfferAmount.toFixed(2)} has been accepted!`,
+          description: `Your offer of $${lastOfferAmount.toFixed(2)} has been accepted! You can now proceed to checkout.`,
           variant: "default"
         });
         
         // Update the product price in UI
         onPriceChange(lastOfferAmount);
+        
+        // Navigate to checkout after 2 seconds
+        setTimeout(() => {
+          window.location.href = '/checkout';
+        }, 2000);
       } else if (status === 'rejected') {
         toast({
           title: "Offer Rejected",
