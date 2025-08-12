@@ -53,7 +53,7 @@ const BargainOfferButton: React.FC<BargainOfferButtonProps> = ({
           Make Counter Offer
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]" aria-describedby="offer-description">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <MessageSquare className="h-5 w-5 mr-2" />

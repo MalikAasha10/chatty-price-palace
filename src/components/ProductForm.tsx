@@ -69,7 +69,7 @@ const productSchema = z.object({
   images: z.array(z.string()).min(1, "At least one image is required"),
   category: z.string().min(1, "Category is required"),
   allowBargaining: z.boolean().default(true),
-  discountPercentage: z.coerce.number().min(0).max(100).default(0),
+  discountPercentage: z.coerce.number().min(0).max(50).default(5),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -87,7 +87,7 @@ const ProductForm = ({ isOpen, onClose, product, isEditing }: ProductFormProps) 
     images: product?.images || [],
     category: product?.category || "Other",
     allowBargaining: product?.allowBargaining !== undefined ? product.allowBargaining : true,
-    discountPercentage: product?.discountPercentage || 0,
+    discountPercentage: product?.discountPercentage || 5,
   };
 
   const form = useForm<ProductFormValues>({
@@ -104,7 +104,7 @@ const ProductForm = ({ isOpen, onClose, product, isEditing }: ProductFormProps) 
         images: product.images,
         category: product.category || "Other",
         allowBargaining: product.allowBargaining !== undefined ? product.allowBargaining : true,
-        discountPercentage: product.discountPercentage || 0,
+        discountPercentage: product.discountPercentage || 5,
       });
       setImageUrls(product.images);
     }
@@ -288,17 +288,20 @@ const ProductForm = ({ isOpen, onClose, product, isEditing }: ProductFormProps) 
                 name="discountPercentage"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Discount Percentage (%)</FormLabel>
+                    <FormLabel>Max Bargain Discount (%)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         min="0"
-                        max="100"
-                        placeholder="0"
+                        max="50"
+                        placeholder="5"
                         {...field}
                       />
                     </FormControl>
                     <FormMessage />
+                    <p className="text-xs text-muted-foreground">
+                      Maximum discount you'll accept during bargaining (0-50%)
+                    </p>
                   </FormItem>
                 )}
               />
@@ -316,6 +319,9 @@ const ProductForm = ({ isOpen, onClose, product, isEditing }: ProductFormProps) 
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel>Allow Bargaining</FormLabel>
+                      <p className="text-xs text-muted-foreground">
+                        Enable customers to negotiate prices with you
+                      </p>
                     </div>
                   </FormItem>
                 )}

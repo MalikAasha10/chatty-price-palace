@@ -335,11 +335,23 @@ const CheckoutPage: React.FC = () => {
               
               <Button 
                 onClick={handlePlaceOrder}
-                className="w-full mt-6"
+                className="w-full mt-6 bg-primary hover:bg-primary/90"
                 disabled={isProcessing}
+                size="lg"
               >
-                {isProcessing ? 'Processing...' : `Place Order - $${total.toFixed(2)}`}
+                {isProcessing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Processing Order...
+                  </>
+                ) : (
+                  `Complete Purchase - $${total.toFixed(2)}`
+                )}
               </Button>
+              
+              <p className="text-xs text-center text-muted-foreground mt-3">
+                🔒 Your payment information is secure and encrypted
+              </p>
             </Card>
           </div>
         </div>

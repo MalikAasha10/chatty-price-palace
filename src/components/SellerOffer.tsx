@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Star, ThumbsUp, MessageSquare, Shield, Truck, Clock } from 'lucide-react';
-import BargainingChat from './BargainingChat';
+import AutoBargainingChat from './AutoBargainingChat';
 
 interface SellerOfferProps {
   sellerId: number;
@@ -17,6 +17,8 @@ interface SellerOfferProps {
   responseRate: number; // percentage
   isPreferredSeller?: boolean;
   productId?: string;
+  productTitle?: string;
+  discountPercentage?: number;
 }
 
 const SellerOffer: React.FC<SellerOfferProps> = ({
@@ -30,7 +32,9 @@ const SellerOffer: React.FC<SellerOfferProps> = ({
   deliveryDays,
   responseRate,
   isPreferredSeller = false,
-  productId = "demo-product-id" // Default fallback for demo
+  productId = "demo-product-id",
+  productTitle = "Product",
+  discountPercentage = 5
 }) => {
   const [showBargainingChat, setShowBargainingChat] = useState(false);
   const [currentPrice, setCurrentPrice] = useState(initialPrice);
@@ -43,8 +47,23 @@ const SellerOffer: React.FC<SellerOfferProps> = ({
     setShowBargainingChat(false);
   };
   
-  const handlePriceChange = (newPrice: number) => {
-    setCurrentPrice(newPrice);
+  const handleAcceptedOffer = (finalPrice: number) => {
+    setCurrentPrice(finalPrice);
+    setShowBargainingChat(false);
+    
+    // Prepare checkout data
+    const checkoutItems = [{
+      productId: productId,
+      title: productTitle,
+      price: initialPrice,
+      negotiatedPrice: finalPrice,
+      quantity: 1,
+      image: '/placeholder.svg',
+      seller: sellerName
+    }];
+    
+    // Navigate to checkout
+    window.location.href = `/checkout?items=${encodeURIComponent(JSON.stringify(checkoutItems))}`;
   };
 
   return (
@@ -106,13 +125,15 @@ const SellerOffer: React.FC<SellerOfferProps> = ({
       
       {showBargainingChat && (
         <div className="mt-4 animate-slide-up">
-          <BargainingChat 
+          <AutoBargainingChat 
             sellerId={sellerId}
             sellerName={sellerName}
             initialPrice={initialPrice}
             productId={productId}
+            productTitle={productTitle}
+            discountPercentage={discountPercentage}
             onClose={handleCloseChat}
-            onPriceChange={handlePriceChange}
+            onAcceptedOffer={handleAcceptedOffer}
           />
         </div>
       )}

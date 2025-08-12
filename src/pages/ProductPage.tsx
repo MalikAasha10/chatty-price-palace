@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/dialog';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import BargainingChat from '@/components/BargainingChat';
+import SellerOffer from '@/components/SellerOffer';
 import { Product } from '@/hooks/useProducts';
 import { useAddToCart } from '@/hooks/useCart';
 
@@ -165,44 +165,59 @@ const ProductPage: React.FC = () => {
 
             <p className="text-gray-700 leading-relaxed">{product.description}</p>
 
-            <div className="flex flex-col space-y-3">
-              <Button 
-                onClick={addToCart} 
-                className="w-full"
-                disabled={addToCartMutation.isPending}
-              >
-                {addToCartMutation.isPending ? 'Adding...' : 'Add to Cart'}
-              </Button>
-              
-              {product.allowBargaining && (
-                <Dialog open={isBargaining} onOpenChange={setIsBargaining}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full" onClick={startBargaining}>
-                      Bargain with Seller
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto" aria-describedby="bargain-description">
-                    <DialogHeader>
-                      <DialogTitle>Bargain for {product.title}</DialogTitle>
-                      <DialogDescription id="bargain-description">
-                        Negotiate the price with the seller. Maximum 5% discount available.
-                      </DialogDescription>
-                    </DialogHeader>
-                    {userId && (
-                      <BargainingChat
-                        productId={product._id}
-                        sellerId={product.sellerRef._id}
-                        sellerName={product.sellerRef.name || product.sellerRef.storeName}
-                        initialPrice={product.price}
-                        onClose={() => setIsBargaining(false)}
-                        onPriceChange={(newPrice) => {
-                          console.log('Price updated to:', newPrice);
-                        }}
-                      />
-                    )}
-                  </DialogContent>
-                </Dialog>
-              )}
+            {/* Sellers Section */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Available from these sellers:</h3>
+              <div className="space-y-3">
+                <SellerOffer
+                  sellerId={1}
+                  sellerName={product.sellerRef?.storeName || product.sellerRef?.name || "Main Store"}
+                  sellerRating={4.8}
+                  sellerReviews={127}
+                  initialPrice={hasDiscount ? product.discountedPrice : product.price}
+                  stock={15}
+                  fulfillment="BargainBay"
+                  deliveryDays={2}
+                  responseRate={98}
+                  isPreferredSeller={true}
+                  productId={id}
+                  productTitle={product.title}
+                  discountPercentage={product.discountPercentage || 5}
+                />
+                
+                {/* Additional sellers for same product */}
+                <SellerOffer
+                  sellerId={2}
+                  sellerName="Tech Hub Premium"
+                  sellerRating={4.6}
+                  sellerReviews={89}
+                  initialPrice={(hasDiscount ? product.discountedPrice : product.price) * 1.05}
+                  stock={8}
+                  fulfillment="Seller"
+                  deliveryDays={3}
+                  responseRate={95}
+                  isPreferredSeller={false}
+                  productId={id}
+                  productTitle={product.title}
+                  discountPercentage={3}
+                />
+                
+                <SellerOffer
+                  sellerId={3}
+                  sellerName="BargainBay Direct"
+                  sellerRating={4.9}
+                  sellerReviews={203}
+                  initialPrice={(hasDiscount ? product.discountedPrice : product.price) * 0.98}
+                  stock={25}
+                  fulfillment="BargainBay"
+                  deliveryDays={1}
+                  responseRate={99}
+                  isPreferredSeller={false}
+                  productId={id}
+                  productTitle={product.title}
+                  discountPercentage={7}
+                />
+              </div>
             </div>
 
             {product.sellerRef && (
