@@ -202,10 +202,10 @@ const Index = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Use real data or fallback to samples
-  const featuredProducts = productsData?.featuredProducts?.map(mapProductToCardProps) || sampleProducts.slice(0, 4);
-  const newArrivals = productsData?.featuredProducts?.map(mapProductToCardProps) || sampleProducts.slice(4, 8);
-  const bestDeals = productsData?.dealsProducts?.map(mapProductToCardProps) || sampleProducts.slice(8, 12);
+  // Use real data from API - no fallback to fake data
+  const featuredProducts = productsData?.featuredProducts?.map(mapProductToCardProps) || [];
+  const newArrivals = productsData?.featuredProducts?.map(mapProductToCardProps) || [];
+  const bestDeals = productsData?.dealsProducts?.map(mapProductToCardProps) || [];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -348,30 +348,66 @@ const Index = () => {
               <TabsContent value="featured">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   {isLoading ? (
-                    <p>Loading products...</p>
-                  ) : featuredProducts.map((product) => (
-                    <ProductCard key={product.id} {...product} />
-                  ))}
+                    Array.from({length: 4}).map((_, i) => (
+                      <div key={i} className="animate-pulse">
+                        <div className="bg-gray-200 rounded-lg h-48 mb-4"></div>
+                        <div className="bg-gray-200 h-4 rounded mb-2"></div>
+                        <div className="bg-gray-200 h-4 rounded w-3/4"></div>
+                      </div>
+                    ))
+                  ) : featuredProducts.length > 0 ? (
+                    featuredProducts.map((product) => (
+                      <ProductCard key={product.id} {...product} />
+                    ))
+                  ) : (
+                    <div className="col-span-full text-center py-8">
+                      <p className="text-gray-500">No featured products available.</p>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
 
               <TabsContent value="new">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   {isLoading ? (
-                    <p>Loading products...</p>
-                  ) : newArrivals.map((product) => (
-                    <ProductCard key={product.id} {...product} />
-                  ))}
+                    Array.from({length: 4}).map((_, i) => (
+                      <div key={i} className="animate-pulse">
+                        <div className="bg-gray-200 rounded-lg h-48 mb-4"></div>
+                        <div className="bg-gray-200 h-4 rounded mb-2"></div>
+                        <div className="bg-gray-200 h-4 rounded w-3/4"></div>
+                      </div>
+                    ))
+                  ) : newArrivals.length > 0 ? (
+                    newArrivals.map((product) => (
+                      <ProductCard key={product.id} {...product} />
+                    ))
+                  ) : (
+                    <div className="col-span-full text-center py-8">
+                      <p className="text-gray-500">No new arrivals available.</p>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
 
               <TabsContent value="deals">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   {isLoading ? (
-                    <p>Loading products...</p>
-                  ) : bestDeals.map((product) => (
-                    <ProductCard key={product.id} {...product} />
-                  ))}
+                    Array.from({length: 4}).map((_, i) => (
+                      <div key={i} className="animate-pulse">
+                        <div className="bg-gray-200 rounded-lg h-48 mb-4"></div>
+                        <div className="bg-gray-200 h-4 rounded mb-2"></div>
+                        <div className="bg-gray-200 h-4 rounded w-3/4"></div>
+                      </div>
+                    ))
+                  ) : bestDeals.length > 0 ? (
+                    bestDeals.map((product) => (
+                      <ProductCard key={product.id} {...product} />
+                    ))
+                  ) : (
+                    <div className="col-span-full text-center py-8">
+                      <p className="text-gray-500">No deals available at the moment.</p>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
             </Tabs>

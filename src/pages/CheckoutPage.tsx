@@ -56,6 +56,19 @@ const CheckoutPage: React.FC = () => {
   });
   
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Check for bargain item in localStorage
+  React.useEffect(() => {
+    const bargainItem = localStorage.getItem('bargainItem');
+    if (bargainItem && !items.length) {
+      try {
+        const parsedItem = JSON.parse(bargainItem);
+        items = [parsedItem];
+      } catch (error) {
+        console.error('Error parsing bargain item:', error);
+      }
+    }
+  }, []);
   
   // Calculate totals
   const subtotal = items.reduce((sum: number, item: CheckoutItem) => 
@@ -79,12 +92,49 @@ const CheckoutPage: React.FC = () => {
     setIsProcessing(true);
     
     try {
-      // Simulate order processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to place an order",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Prepare order data
+      const orderData = {
+        items: items.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          bargainId: item.negotiatedPrice ? 'auto-generated' : null // This should be actual bargain ID
+        })),
+        shippingAddress,
+        paymentMethod: 'credit_card'
+      };
+
+      // Send order to backend
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create order');
+      }
+
+      const data = await response.json();
+      
+      // Clear bargain item from localStorage
+      localStorage.removeItem('bargainItem');
       
       toast({
         title: "Order Placed Successfully!",
-        description: `Your order total is $${total.toFixed(2)}`,
+        description: `Your order total is $${total.toFixed(2)}. Order ID: ${data.order._id}`,
         variant: "default"
       });
       
@@ -92,7 +142,8 @@ const CheckoutPage: React.FC = () => {
       navigate('/user-dashboard', { 
         state: { 
           orderSuccess: true, 
-          orderTotal: total.toFixed(2) 
+          orderTotal: total.toFixed(2),
+          orderId: data.order._id
         }
       });
       

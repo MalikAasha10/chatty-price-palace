@@ -166,7 +166,7 @@ const Navbar = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
                 {userRole !== 'seller' && (
-                  <Link to="/cart">
+                  <Link to="/cart-page">
                     <Button variant="ghost" size="icon" className="relative">
                       <ShoppingCart className="h-5 w-5" />
                       {cartItemsCount > 0 && (
@@ -258,7 +258,7 @@ const Navbar = () => {
             )}
 
             {userRole !== 'seller' && (
-              <Link to="/cart" className="flex items-center justify-between py-2 border-b border-gray-100">
+              <Link to="/cart-page" className="flex items-center justify-between py-2 border-b border-gray-100">
                 <span className="text-gray-700">Shopping Cart</span>
                 {cartItemsCount > 0 && (
                   <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">

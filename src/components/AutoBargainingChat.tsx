@@ -57,13 +57,44 @@ const AutoBargainingChat: React.FC<AutoBargainingChatProps> = ({
     setMessages([welcomeMessage]);
   }, [sellerName, productTitle]);
 
+  const storeBargainInDB = async (finalPrice: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('/api/bargains', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productId,
+          sellerId,
+          initialPrice,
+          offerAmount: finalPrice
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Bargain stored successfully:', data);
+      }
+    } catch (error) {
+      console.error('Error storing bargain:', error);
+    }
+  };
+
   const generateSellerResponse = (userOffer: number, messageNumber: number): string => {
     const discountFromOriginal = ((initialPrice - userOffer) / initialPrice) * 100;
     
     if (userOffer >= minPrice && messageNumber === 1) {
       // Accept reasonable first offers
       setBargainStatus('accepted');
-      setTimeout(() => onAcceptedOffer(userOffer), 1500);
+      setTimeout(async () => {
+        await storeBargainInDB(userOffer);
+        onAcceptedOffer(userOffer);
+      }, 1500);
       return `Great! I can accept your offer of $${userOffer.toFixed(2)}. That's a fair deal!`;
     } else if (userOffer < minPrice && messageNumber === 1) {
       // Counter with minimum acceptable price
@@ -73,7 +104,10 @@ const AutoBargainingChat: React.FC<AutoBargainingChatProps> = ({
       // Final response - accept if within range, reject if too low
       if (userOffer >= minPrice) {
         setBargainStatus('accepted');
-        setTimeout(() => onAcceptedOffer(userOffer), 1500);
+        setTimeout(async () => {
+          await storeBargainInDB(userOffer);
+          onAcceptedOffer(userOffer);
+        }, 1500);
         return `Alright, you've got a deal! I'll accept $${userOffer.toFixed(2)}. Let's proceed to checkout.`;
       } else {
         setBargainStatus('rejected');
