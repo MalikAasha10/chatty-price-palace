@@ -62,7 +62,7 @@ const AutoBargainingChat: React.FC<AutoBargainingChatProps> = ({
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      // Store successful bargain in database
+      // Store successful bargain in database using correct field names
       const response = await fetch('/api/bargains', {
         method: 'POST',
         headers: {
@@ -71,9 +71,7 @@ const AutoBargainingChat: React.FC<AutoBargainingChatProps> = ({
         },
         body: JSON.stringify({
           productId,
-          sellerId,
-          initialPrice,
-          offerAmount: finalPrice
+          initialOffer: finalPrice
         })
       });
 

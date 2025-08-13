@@ -3,7 +3,7 @@ const Bargain = require('../models/Bargain');
 const Product = require('../models/Product');
 
 // @desc    Create a new bargaining session
-// @route   POST /api/bargain
+// @route   POST /api/bargains
 // @access  Private
 exports.createBargainSession = async (req, res) => {
   try {
@@ -75,6 +75,42 @@ exports.createBargainSession = async (req, res) => {
 
     await bargain.save();
 
+    // If bargain is accepted (initial offer within acceptable range), add to cart
+    if (initialOffer >= product.minAcceptablePrice) {
+      try {
+        const Cart = require('../models/Cart');
+        let cart = await Cart.findOne({ userId: req.user._id });
+        
+        if (!cart) {
+          cart = new Cart({ userId: req.user._id, items: [] });
+        }
+        
+        // Check if product already in cart
+        const existingItem = cart.items.find(item => 
+          item.productId.toString() === productId.toString()
+        );
+        
+        if (existingItem) {
+          existingItem.quantity += 1;
+          existingItem.bargainedPrice = initialOffer;
+        } else {
+          cart.items.push({
+            productId,
+            quantity: 1,
+            bargainedPrice: initialOffer
+          });
+        }
+        
+        await cart.save();
+        
+        // Update bargain status to accepted
+        bargain.status = 'accepted';
+        await bargain.save();
+      } catch (cartError) {
+        console.error('Error adding to cart:', cartError);
+      }
+    }
+
     res.status(201).json({
       success: true,
       bargain
@@ -89,7 +125,7 @@ exports.createBargainSession = async (req, res) => {
 };
 
 // @desc    Get buyer's bargaining sessions
-// @route   GET /api/bargain/buyer
+// @route   GET /api/bargains/buyer
 // @access  Private
 exports.getBuyerBargains = async (req, res) => {
   try {
@@ -111,7 +147,7 @@ exports.getBuyerBargains = async (req, res) => {
 };
 
 // @desc    Get seller's bargaining sessions
-// @route   GET /api/bargain/seller
+// @route   GET /api/bargains/seller
 // @access  Private/Seller
 exports.getSellerBargains = async (req, res) => {
   try {
@@ -133,7 +169,7 @@ exports.getSellerBargains = async (req, res) => {
 };
 
 // @desc    Get single bargaining session
-// @route   GET /api/bargain/:id
+// @route   GET /api/bargains/:id
 // @access  Private
 exports.getBargainSession = async (req, res) => {
   try {
@@ -171,7 +207,7 @@ exports.getBargainSession = async (req, res) => {
 };
 
 // @desc    Add message to bargaining session
-// @route   POST /api/bargain/:id/message
+// @route   POST /api/bargains/:id/message
 // @access  Private
 exports.addMessage = async (req, res) => {
   try {
@@ -274,7 +310,7 @@ exports.addMessage = async (req, res) => {
 };
 
 // @desc    Accept or reject bargain
-// @route   PUT /api/bargain/:id/status
+// @route   PUT /api/bargains/:id/status
 // @access  Private/Seller
 exports.updateBargainStatus = async (req, res) => {
   try {
@@ -306,6 +342,39 @@ exports.updateBargainStatus = async (req, res) => {
     
     bargain.status = status;
     bargain.updatedAt = new Date();
+    
+    // If accepted, add to buyer's cart
+    if (status === 'accepted') {
+      try {
+        const Cart = require('../models/Cart');
+        let cart = await Cart.findOne({ userId: bargain.buyerId });
+        
+        if (!cart) {
+          cart = new Cart({ userId: bargain.buyerId, items: [] });
+        }
+        
+        // Check if product already in cart
+        const existingItem = cart.items.find(item => 
+          item.productId.toString() === bargain.productId.toString()
+        );
+        
+        if (existingItem) {
+          existingItem.quantity += 1;
+          existingItem.bargainedPrice = bargain.currentPrice;
+        } else {
+          cart.items.push({
+            productId: bargain.productId,
+            quantity: 1,
+            bargainedPrice: bargain.currentPrice
+          });
+        }
+        
+        await cart.save();
+      } catch (cartError) {
+        console.error('Error adding to cart:', cartError);
+      }
+    }
+    
     await bargain.save();
     
     res.status(200).json({
