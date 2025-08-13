@@ -7,10 +7,39 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { User, ShoppingBag, Heart, Clock, Settings, LogOut } from 'lucide-react';
 import { useUserData } from '@/hooks/useUserData';
+import axios from 'axios';
 import { format } from 'date-fns';
 
 const UserDashboard = () => {
-  const { userData, loading, error, recentOrders, handleLogout } = useUserData();
+  const { userData, loading, error, handleLogout } = useUserData();
+  const [recentOrders, setRecentOrders] = React.useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = React.useState(true);
+
+  // Fetch real orders data
+  React.useEffect(() => {
+    const fetchRecentOrders = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token || !userData) return;
+
+        const response = await axios.get('/api/orders', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        // Get last 5 orders
+        const orders = (response.data || []).slice(0, 5);
+        setRecentOrders(orders);
+      } catch (err) {
+        console.error('Failed to fetch orders:', err);
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
+
+    if (userData) {
+      fetchRecentOrders();
+    }
+  }, [userData]);
 
   // Format the date if we have userData
   const formatJoinDate = (dateString: string) => {
@@ -90,12 +119,6 @@ const UserDashboard = () => {
                   </Link>
                 </Button>
                 <Button variant="ghost" className="w-full justify-start" asChild>
-                  <Link to="/wishlist">
-                    <Heart className="mr-2 h-4 w-4" />
-                    Wishlist
-                  </Link>
-                </Button>
-                <Button variant="ghost" className="w-full justify-start" asChild>
                   <Link to="/history">
                     <Clock className="mr-2 h-4 w-4" />
                     Browse History
@@ -126,20 +149,29 @@ const UserDashboard = () => {
               
               <Card className="p-6">
                 <h2 className="text-lg font-semibold mb-2">Your Recent Activity</h2>
-                <p className="text-gray-600">You've placed {recentOrders.length} orders in the past month.</p>
-                <Button className="mt-4 bg-brand-500 hover:bg-brand-600" asChild>
+                <p className="text-muted-foreground">
+                  {ordersLoading ? 'Loading orders...' : `You've placed ${recentOrders.length} orders.`}
+                </p>
+                <Button className="mt-4" asChild>
                   <Link to="/categories">Continue Shopping</Link>
                 </Button>
               </Card>
             </div>
             
             <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-4">Recent Orders</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Recent Orders</h2>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/orders">View All Orders</Link>
+                </Button>
+              </div>
               
-              {recentOrders.length > 0 ? (
+              {ordersLoading ? (
+                <p className="text-muted-foreground">Loading recent orders...</p>
+              ) : recentOrders.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="text-left bg-gray-50">
+                    <thead className="text-left bg-muted">
                       <tr>
                         <th className="px-4 py-2">Order ID</th>
                         <th className="px-4 py-2">Date</th>
@@ -150,22 +182,22 @@ const UserDashboard = () => {
                     </thead>
                     <tbody>
                       {recentOrders.map((order) => (
-                        <tr key={order.id} className="border-t">
-                          <td className="px-4 py-2">{order.id}</td>
-                          <td className="px-4 py-2">{order.date}</td>
+                        <tr key={order._id} className="border-t">
+                          <td className="px-4 py-2 font-mono">#{order._id.slice(-8)}</td>
+                          <td className="px-4 py-2">{format(new Date(order.createdAt), 'MMM dd, yyyy')}</td>
                           <td className="px-4 py-2">
                             <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                              order.status === 'Delivered' ? 'bg-green-100 text-green-800' : 
-                              order.status === 'In Transit' ? 'bg-blue-100 text-blue-800' :
+                              order.status === 'delivered' ? 'bg-green-100 text-green-800' : 
+                              order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
                               'bg-yellow-100 text-yellow-800'
                             }`}>
                               {order.status}
                             </span>
                           </td>
-                          <td className="px-4 py-2">${order.total.toFixed(2)}</td>
+                          <td className="px-4 py-2">${order.totalAmount.toFixed(2)}</td>
                           <td className="px-4 py-2">
                             <Button variant="outline" size="sm" asChild>
-                              <Link to={`/orders/${order.id}`}>View</Link>
+                              <Link to="/orders">View</Link>
                             </Button>
                           </td>
                         </tr>
@@ -174,14 +206,13 @@ const UserDashboard = () => {
                   </table>
                 </div>
               ) : (
-                <p className="text-gray-500">You haven't placed any orders yet.</p>
+                <div className="text-center py-6">
+                  <p className="text-muted-foreground mb-3">You haven't placed any orders yet.</p>
+                  <Button asChild>
+                    <Link to="/categories">Start Shopping</Link>
+                  </Button>
+                </div>
               )}
-              
-              <div className="mt-4">
-                <Button variant="outline" asChild>
-                  <Link to="/categories">View All Products</Link>
-                </Button>
-              </div>
             </Card>
           </div>
         </div>

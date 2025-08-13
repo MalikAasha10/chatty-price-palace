@@ -26,6 +26,7 @@ app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/bargains', require('./routes/bargainRoutes'));
 app.use('/api/cart', require('./routes/cartRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
+app.use('/api/history', require('./routes/historyRoutes'));
 
 // Create HTTP server
 const server = http.createServer(app);
