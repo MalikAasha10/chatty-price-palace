@@ -55,13 +55,13 @@ const orderSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['credit_card', 'debit_card', 'paypal', 'bank_transfer'],
+    enum: ['credit_card', 'debit_card', 'paypal', 'bank_transfer', 'jazzcash', 'easypaisa', 'cash_on_delivery'],
     required: true
   },
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'],
-    default: 'pending'
+    enum: ['Pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'],
+    default: 'Pending'
   },
   createdAt: {
     type: Date,
