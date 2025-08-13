@@ -1,43 +1,24 @@
 import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from '@/components/ui/use-toast';
-import { CreditCard, MapPin, User, Package } from 'lucide-react';
+import { CreditCard, MapPin, User, Package, Smartphone, Banknote, Shield } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-
-interface CheckoutItem {
-  productId: string;
-  title: string;
-  price: number;
-  negotiatedPrice?: number;
-  quantity: number;
-  image: string;
-  seller: string;
-}
+import { useCart, useClearCart } from '@/hooks/useCart';
+import axios from 'axios';
 
 const CheckoutPage: React.FC = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  
-  // Get items from state or URL params (for bargaining redirects)
-  const { items: stateItems = [] } = location.state || {};
-  const urlParams = new URLSearchParams(location.search);
-  const urlItems = urlParams.get('items');
-  
-  let items: CheckoutItem[] = stateItems;
-  if (urlItems && !stateItems.length) {
-    try {
-      items = JSON.parse(decodeURIComponent(urlItems));
-    } catch (error) {
-      console.error('Error parsing URL items:', error);
-    }
-  }
+  const { data: cart, isLoading } = useCart();
+  const clearCart = useClearCart();
   
   const [shippingAddress, setShippingAddress] = useState({
     fullName: '',
@@ -45,45 +26,59 @@ const CheckoutPage: React.FC = () => {
     city: '',
     state: '',
     zipCode: '',
-    country: ''
+    country: 'Pakistan',
+    phone: '',
+    email: ''
   });
   
-  const [paymentMethod, setPaymentMethod] = useState({
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-    cardholderName: ''
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'cash_on_delivery' | 'jazzcash' | 'easypaisa'>('cash_on_delivery');
+  const [paymentDetails, setPaymentDetails] = useState({
+    phoneNumber: '',
+    transactionId: ''
   });
   
   const [isProcessing, setIsProcessing] = useState(false);
-
-  // Check for bargain item in localStorage
-  React.useEffect(() => {
-    const bargainItem = localStorage.getItem('bargainItem');
-    if (bargainItem && !items.length) {
-      try {
-        const parsedItem = JSON.parse(bargainItem);
-        items = [parsedItem];
-      } catch (error) {
-        console.error('Error parsing bargain item:', error);
-      }
-    }
-  }, []);
   
   // Calculate totals
-  const subtotal = items.reduce((sum: number, item: CheckoutItem) => 
-    sum + (item.negotiatedPrice || item.price) * item.quantity, 0
-  );
-  const shipping = 9.99;
-  const tax = subtotal * 0.08; // 8% tax
+  const items = cart?.items || [];
+  const subtotal = items.reduce((sum, item) => {
+    const price = item.bargainedPrice || item.productId.discountedPrice || item.productId.price;
+    return sum + (price * item.quantity);
+  }, 0);
+  const shipping = subtotal > 5000 ? 0 : 250; // Free shipping over Rs. 5000
+  const tax = subtotal * 0.17; // 17% GST in Pakistan
   const total = subtotal + shipping + tax;
+
+  // Simulate payment processing for JazzCash/EasyPaisa
+  const simulatePayment = async (method: string, phoneNumber: string) => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Generate fake transaction ID
+    const transactionId = `${method.toUpperCase()}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    return {
+      success: true,
+      transactionId,
+      status: 'completed'
+    };
+  };
   
   const handlePlaceOrder = async () => {
     // Basic validation
-    if (!shippingAddress.fullName || !shippingAddress.address || !paymentMethod.cardNumber) {
+    if (!shippingAddress.fullName || !shippingAddress.address || !shippingAddress.phone || !shippingAddress.email) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required shipping details",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (selectedPaymentMethod !== 'cash_on_delivery' && !paymentDetails.phoneNumber) {
+      toast({
+        title: "Missing Payment Information",
+        description: "Please enter your phone number for mobile payment",
         variant: "destructive"
       });
       return;
@@ -102,40 +97,58 @@ const CheckoutPage: React.FC = () => {
         return;
       }
 
+      let paymentStatus = 'pending';
+      let transactionId = null;
+
+      // Handle payment processing
+      if (selectedPaymentMethod !== 'cash_on_delivery') {
+        try {
+          const paymentResult = await simulatePayment(selectedPaymentMethod, paymentDetails.phoneNumber);
+          paymentStatus = 'completed';
+          transactionId = paymentResult.transactionId;
+          
+          toast({
+            title: "Payment Successful",
+            description: `Transaction ID: ${transactionId}`,
+          });
+        } catch (error) {
+          toast({
+            title: "Payment Failed",
+            description: "Payment processing failed. Please try again.",
+            variant: "destructive"
+          });
+          return;
+        }
+      }
+
       // Prepare order data
       const orderData = {
         items: items.map(item => ({
-          productId: item.productId,
+          productId: item.productId._id,
           quantity: item.quantity,
-          bargainId: item.negotiatedPrice ? 'auto-generated' : null // This should be actual bargain ID
+          bargainId: item.bargainedPrice ? item._id : null
         })),
         shippingAddress,
-        paymentMethod: 'credit_card'
+        paymentMethod: selectedPaymentMethod,
+        paymentStatus,
+        transactionId
       };
 
       // Send order to backend
-      const response = await fetch('/api/orders', {
-        method: 'POST',
+      const response = await axios.post('/api/orders', orderData, {
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(orderData)
+        }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to create order');
-      }
-
-      const data = await response.json();
+      const data = response.data;
       
-      // Clear bargain item from localStorage
-      localStorage.removeItem('bargainItem');
+      // Clear cart after successful order
+      await clearCart.mutateAsync();
       
       toast({
-        title: "Order Placed Successfully!",
-        description: `Your order total is $${total.toFixed(2)}. Order ID: ${data.order._id}`,
-        variant: "default"
+        title: "Order Placed Successfully! 🎉",
+        description: `Your order total is Rs. ${total.toFixed(2)}. Order ID: ${data.order._id}`,
       });
       
       // Navigate to success page
@@ -143,14 +156,16 @@ const CheckoutPage: React.FC = () => {
         state: { 
           orderSuccess: true, 
           orderTotal: total.toFixed(2),
-          orderId: data.order._id
+          orderId: data.order._id,
+          paymentMethod: selectedPaymentMethod,
+          transactionId
         }
       });
       
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Order Failed",
-        description: "There was an error processing your order",
+        description: error.response?.data?.message || "There was an error processing your order",
         variant: "destructive"
       });
     } finally {
@@ -158,15 +173,30 @@ const CheckoutPage: React.FC = () => {
     }
   };
   
-  if (!items || items.length === 0) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <div className="container mx-auto px-4 py-8 flex-grow">
           <div className="text-center py-12">
-            <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-800">No Items to Checkout</h2>
-            <p className="mt-2 text-gray-600">Your checkout session has expired or no items were selected.</p>
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
+            <h2 className="text-2xl font-bold">Loading your cart...</h2>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!cart || !items || items.length === 0) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8 flex-grow">
+          <div className="text-center py-12">
+            <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-2xl font-bold">No Items to Checkout</h2>
+            <p className="mt-2 text-muted-foreground">Your cart is empty. Add some items before checkout.</p>
             <Button asChild className="mt-6">
               <a href="/cart">Go to Cart</a>
             </Button>
@@ -181,7 +211,10 @@ const CheckoutPage: React.FC = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <div className="container mx-auto px-4 py-8 flex-grow">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
+        <div className="flex items-center mb-8">
+          <Shield className="h-8 w-8 text-primary mr-3" />
+          <h1 className="text-3xl font-bold">Secure Checkout</h1>
+        </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column - Forms */}
@@ -200,7 +233,7 @@ const CheckoutPage: React.FC = () => {
                     id="fullName"
                     value={shippingAddress.fullName}
                     onChange={(e) => setShippingAddress(prev => ({ ...prev, fullName: e.target.value }))}
-                    placeholder="John Doe"
+                    placeholder="Muhammad Ali"
                     required
                   />
                 </div>
@@ -211,7 +244,7 @@ const CheckoutPage: React.FC = () => {
                     id="address"
                     value={shippingAddress.address}
                     onChange={(e) => setShippingAddress(prev => ({ ...prev, address: e.target.value }))}
-                    placeholder="123 Main Street"
+                    placeholder="House # 123, Street 45, F-8 Markaz"
                     required
                   />
                 </div>
@@ -222,40 +255,57 @@ const CheckoutPage: React.FC = () => {
                     id="city"
                     value={shippingAddress.city}
                     onChange={(e) => setShippingAddress(prev => ({ ...prev, city: e.target.value }))}
-                    placeholder="New York"
+                    placeholder="Islamabad"
                     required
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="state">State *</Label>
-                  <Input
-                    id="state"
-                    value={shippingAddress.state}
-                    onChange={(e) => setShippingAddress(prev => ({ ...prev, state: e.target.value }))}
-                    placeholder="NY"
-                    required
-                  />
+                  <Label htmlFor="state">Province *</Label>
+                  <Select onValueChange={(value) => setShippingAddress(prev => ({ ...prev, state: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Province" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="punjab">Punjab</SelectItem>
+                      <SelectItem value="sindh">Sindh</SelectItem>
+                      <SelectItem value="kpk">Khyber Pakhtunkhwa</SelectItem>
+                      <SelectItem value="balochistan">Balochistan</SelectItem>
+                      <SelectItem value="islamabad">Islamabad Capital Territory</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div>
-                  <Label htmlFor="zipCode">ZIP Code *</Label>
+                  <Label htmlFor="zipCode">Postal Code</Label>
                   <Input
                     id="zipCode"
                     value={shippingAddress.zipCode}
                     onChange={(e) => setShippingAddress(prev => ({ ...prev, zipCode: e.target.value }))}
-                    placeholder="10001"
+                    placeholder="44000"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="phone">Phone Number *</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={shippingAddress.phone}
+                    onChange={(e) => setShippingAddress(prev => ({ ...prev, phone: e.target.value }))}
+                    placeholder="+92 300 1234567"
                     required
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="country">Country *</Label>
+                  <Label htmlFor="email">Email Address *</Label>
                   <Input
-                    id="country"
-                    value={shippingAddress.country}
-                    onChange={(e) => setShippingAddress(prev => ({ ...prev, country: e.target.value }))}
-                    placeholder="United States"
+                    id="email"
+                    type="email"
+                    value={shippingAddress.email}
+                    onChange={(e) => setShippingAddress(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="example@email.com"
                     required
                   />
                 </div>
@@ -265,58 +315,68 @@ const CheckoutPage: React.FC = () => {
             {/* Payment Method */}
             <Card className="p-6">
               <div className="flex items-center mb-4">
-                <CreditCard className="h-5 w-5 text-blue-600 mr-2" />
+                <CreditCard className="h-5 w-5 text-primary mr-2" />
                 <h2 className="text-xl font-semibold">Payment Method</h2>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <Label htmlFor="cardholderName">Cardholder Name *</Label>
+              <RadioGroup value={selectedPaymentMethod} onValueChange={(value: any) => setSelectedPaymentMethod(value)}>
+                <div className="space-y-4">
+                  {/* Cash on Delivery */}
+                  <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-muted/50">
+                    <RadioGroupItem value="cash_on_delivery" id="cash" />
+                    <div className="flex items-center space-x-3 flex-1">
+                      <Banknote className="h-5 w-5 text-green-600" />
+                      <div>
+                        <Label htmlFor="cash" className="font-medium">Cash on Delivery</Label>
+                        <p className="text-sm text-muted-foreground">Pay when your order arrives</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* JazzCash */}
+                  <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-muted/50">
+                    <RadioGroupItem value="jazzcash" id="jazzcash" />
+                    <div className="flex items-center space-x-3 flex-1">
+                      <Smartphone className="h-5 w-5 text-purple-600" />
+                      <div>
+                        <Label htmlFor="jazzcash" className="font-medium">JazzCash</Label>
+                        <p className="text-sm text-muted-foreground">Mobile payment via JazzCash</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* EasyPaisa */}
+                  <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-muted/50">
+                    <RadioGroupItem value="easypaisa" id="easypaisa" />
+                    <div className="flex items-center space-x-3 flex-1">
+                      <Smartphone className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <Label htmlFor="easypaisa" className="font-medium">EasyPaisa</Label>
+                        <p className="text-sm text-muted-foreground">Mobile payment via EasyPaisa</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </RadioGroup>
+
+              {/* Mobile Payment Details */}
+              {selectedPaymentMethod !== 'cash_on_delivery' && (
+                <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                  <Label htmlFor="phoneNumber">Mobile Number *</Label>
                   <Input
-                    id="cardholderName"
-                    value={paymentMethod.cardholderName}
-                    onChange={(e) => setPaymentMethod(prev => ({ ...prev, cardholderName: e.target.value }))}
-                    placeholder="John Doe"
+                    id="phoneNumber"
+                    type="tel"
+                    value={paymentDetails.phoneNumber}
+                    onChange={(e) => setPaymentDetails(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                    placeholder="+92 300 1234567"
+                    className="mt-2"
                     required
                   />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    You will receive payment instructions on this number
+                  </p>
                 </div>
-                
-                <div className="md:col-span-2">
-                  <Label htmlFor="cardNumber">Card Number *</Label>
-                  <Input
-                    id="cardNumber"
-                    value={paymentMethod.cardNumber}
-                    onChange={(e) => setPaymentMethod(prev => ({ ...prev, cardNumber: e.target.value }))}
-                    placeholder="1234 5678 9012 3456"
-                    maxLength={19}
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="expiryDate">Expiry Date *</Label>
-                  <Input
-                    id="expiryDate"
-                    value={paymentMethod.expiryDate}
-                    onChange={(e) => setPaymentMethod(prev => ({ ...prev, expiryDate: e.target.value }))}
-                    placeholder="MM/YY"
-                    maxLength={5}
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="cvv">CVV *</Label>
-                  <Input
-                    id="cvv"
-                    value={paymentMethod.cvv}
-                    onChange={(e) => setPaymentMethod(prev => ({ ...prev, cvv: e.target.value }))}
-                    placeholder="123"
-                    maxLength={4}
-                    required
-                  />
-                </div>
-              </div>
+              )}
             </Card>
           </div>
           
@@ -327,36 +387,44 @@ const CheckoutPage: React.FC = () => {
               
               {/* Items */}
               <div className="space-y-4 mb-6">
-                {items.map((item: CheckoutItem, index: number) => (
-                  <div key={index} className="flex items-center space-x-4">
-                    <img 
-                      src={item.image} 
-                      alt={item.title}
-                      className="w-16 h-16 object-cover rounded-lg"
-                    />
-                    <div className="flex-grow">
-                      <h3 className="font-medium text-gray-900 line-clamp-2">{item.title}</h3>
-                      <p className="text-sm text-gray-500">Seller: {item.seller}</p>
-                      <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
-                      
-                      <div className="flex items-center space-x-2 mt-1">
-                        {item.negotiatedPrice && item.negotiatedPrice < item.price ? (
-                          <>
-                            <span className="font-semibold text-green-600">
-                              ${item.negotiatedPrice.toFixed(2)}
-                            </span>
-                            <span className="text-sm text-gray-500 line-through">
-                              ${item.price.toFixed(2)}
-                            </span>
-                            <Badge variant="secondary" className="text-xs">Negotiated</Badge>
-                          </>
-                        ) : (
-                          <span className="font-semibold">${item.price.toFixed(2)}</span>
-                        )}
+                {items.map((item, index) => {
+                  const price = item.bargainedPrice || item.productId.discountedPrice || item.productId.price;
+                  const originalPrice = item.productId.price;
+                  const image = Array.isArray(item.productId.images) 
+                    ? (typeof item.productId.images[0] === 'string' ? item.productId.images[0] : item.productId.images[0]?.url)
+                    : '/placeholder.svg';
+                  
+                  return (
+                    <div key={index} className="flex items-center space-x-4">
+                      <img 
+                        src={image} 
+                        alt={item.productId.title}
+                        className="w-16 h-16 object-cover rounded-lg"
+                      />
+                      <div className="flex-grow">
+                        <h3 className="font-medium line-clamp-2">{item.productId.title}</h3>
+                        <p className="text-sm text-muted-foreground">Seller: {item.productId.sellerRef.name}</p>
+                        <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                        
+                        <div className="flex items-center space-x-2 mt-1">
+                          {item.bargainedPrice && item.bargainedPrice < originalPrice ? (
+                            <>
+                              <span className="font-semibold text-green-600">
+                                Rs. {item.bargainedPrice.toFixed(2)}
+                              </span>
+                              <span className="text-sm text-muted-foreground line-through">
+                                Rs. {originalPrice.toFixed(2)}
+                              </span>
+                              <Badge variant="secondary" className="text-xs">Bargained</Badge>
+                            </>
+                          ) : (
+                            <span className="font-semibold">Rs. {price.toFixed(2)}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               
               <Separator className="my-4" />
@@ -365,44 +433,51 @@ const CheckoutPage: React.FC = () => {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>Rs. {subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping</span>
-                  <span>${shipping.toFixed(2)}</span>
+                  <span>{shipping === 0 ? 'Free' : `Rs. ${shipping.toFixed(2)}`}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Tax</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>GST (17%)</span>
+                  <span>Rs. {tax.toFixed(2)}</span>
                 </div>
                 
                 <Separator />
                 
                 <div className="flex justify-between text-lg font-semibold">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>Rs. {total.toFixed(2)}</span>
                 </div>
+                
+                {subtotal >= 5000 && (
+                  <p className="text-sm text-green-600 text-center">🎉 You qualify for free shipping!</p>
+                )}
               </div>
               
               <Button 
                 onClick={handlePlaceOrder}
-                className="w-full mt-6 bg-primary hover:bg-primary/90"
+                className="w-full mt-6"
                 disabled={isProcessing}
                 size="lg"
               >
                 {isProcessing ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Processing Order...
+                    {selectedPaymentMethod === 'cash_on_delivery' ? 'Placing Order...' : 'Processing Payment...'}
                   </>
                 ) : (
-                  `Complete Purchase - $${total.toFixed(2)}`
+                  `Place Order - Rs. ${total.toFixed(2)}`
                 )}
               </Button>
               
-              <p className="text-xs text-center text-muted-foreground mt-3">
-                🔒 Your payment information is secure and encrypted
-              </p>
+              <div className="text-xs text-center text-muted-foreground mt-3 space-y-1">
+                <p>🔒 Your information is secure and encrypted</p>
+                {selectedPaymentMethod === 'cash_on_delivery' && (
+                  <p>💰 Pay cash when your order arrives</p>
+                )}
+              </div>
             </Card>
           </div>
         </div>
