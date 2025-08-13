@@ -7,14 +7,14 @@ import { toast } from '@/components/ui/use-toast';
 import { MessageSquare, X, DollarSign, CheckCircle, XCircle, User, Bot } from 'lucide-react';
 
 interface AutoBargainingChatProps {
-  sellerId: string | number;
+  sellerId: string;
   sellerName: string;
   initialPrice: number;
   productId: string;
   productTitle: string;
-  discountPercentage?: number;
+  bargainThreshold?: number; // Minimum acceptable price for seller
   onClose: () => void;
-  onAcceptedOffer: (finalPrice: number) => void;
+  onOfferAccepted: (finalPrice: number) => void;
 }
 
 interface Message {
@@ -32,9 +32,9 @@ const AutoBargainingChat: React.FC<AutoBargainingChatProps> = ({
   initialPrice,
   productId,
   productTitle,
-  discountPercentage = 5,
+  bargainThreshold = 0.85, // Default 85% of original price
   onClose,
-  onAcceptedOffer
+  onOfferAccepted
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -42,9 +42,10 @@ const AutoBargainingChat: React.FC<AutoBargainingChatProps> = ({
   const [messageCount, setMessageCount] = useState(0);
   const [bargainStatus, setBargainStatus] = useState<'active' | 'accepted' | 'rejected' | 'expired'>('active');
   const [currentOffer, setCurrentOffer] = useState<number | null>(null);
+  const [showAddToCart, setShowAddToCart] = useState(false);
 
-  const minPrice = initialPrice * (1 - discountPercentage / 100);
-  const maxMessages = 2;
+  const minAcceptablePrice = initialPrice * bargainThreshold;
+  const maxMessages = 3;
 
   useEffect(() => {
     // Initial seller greeting
@@ -62,7 +63,7 @@ const AutoBargainingChat: React.FC<AutoBargainingChatProps> = ({
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      // Store successful bargain in database using correct field names
+      // Store successful bargain in database with valid sellerId and productId
       const response = await fetch('/api/bargains', {
         method: 'POST',
         headers: {
@@ -70,7 +71,8 @@ const AutoBargainingChat: React.FC<AutoBargainingChatProps> = ({
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          productId,
+          productId: productId, // MongoDB ObjectId
+          sellerId: sellerId,   // MongoDB ObjectId
           initialOffer: finalPrice
         })
       });
@@ -78,19 +80,29 @@ const AutoBargainingChat: React.FC<AutoBargainingChatProps> = ({
       if (response.ok) {
         const data = await response.json();
         console.log('Bargain stored successfully:', data);
-        
-        // Add to cart after successful bargain
-        await addToCartAfterBargain(finalPrice);
+        return data;
+      } else {
+        const errorData = await response.json();
+        console.error('Error storing bargain:', errorData);
+        throw new Error(errorData.message || 'Failed to store bargain');
       }
     } catch (error) {
       console.error('Error storing bargain:', error);
+      throw error;
     }
   };
 
-  const addToCartAfterBargain = async (bargainedPrice: number) => {
+  const addToCartManually = async (bargainedPrice: number) => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) return;
+      if (!token) {
+        toast({
+          title: "Login Required",
+          description: "Please log in to add items to cart.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const response = await fetch('/api/cart', {
         method: 'POST',
@@ -106,40 +118,66 @@ const AutoBargainingChat: React.FC<AutoBargainingChatProps> = ({
       });
 
       if (response.ok) {
-        console.log('Product added to cart after bargain');
+        toast({
+          title: "Added to Cart!",
+          description: `Product added at bargained price $${bargainedPrice.toFixed(2)}`,
+        });
+        onClose();
+      } else {
+        throw new Error('Failed to add to cart');
       }
     } catch (error) {
       console.error('Error adding to cart:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add product to cart. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
   const generateSellerResponse = (userOffer: number, messageNumber: number): string => {
-    const discountFromOriginal = ((initialPrice - userOffer) / initialPrice) * 100;
     
-    if (userOffer >= minPrice && messageNumber === 1) {
-      // Accept reasonable first offers
+    if (userOffer >= minAcceptablePrice) {
+      // Accept offers that meet the threshold
       setBargainStatus('accepted');
+      setShowAddToCart(true);
       setTimeout(async () => {
-        await storeBargainInDB(userOffer);
-        onAcceptedOffer(userOffer);
+        try {
+          await storeBargainInDB(userOffer);
+          toast({
+            title: "Offer Accepted!",
+            description: "The seller has accepted your offer. You can now add it to cart.",
+          });
+        } catch (error) {
+          console.error('Error storing bargain:', error);
+        }
       }, 1500);
       return `Great! I can accept your offer of $${userOffer.toFixed(2)}. That's a fair deal!`;
-    } else if (userOffer < minPrice && messageNumber === 1) {
-      // Counter with minimum acceptable price
-      const counterOffer = Math.max(minPrice, userOffer + (initialPrice - userOffer) * 0.6);
+    } else if (messageNumber === 1 || messageNumber === 2) {
+      // Counter with a better offer for first two attempts
+      const counterOffer = Math.max(minAcceptablePrice, userOffer + (initialPrice - userOffer) * 0.5);
       return `I appreciate your interest! That's a bit too low for me. How about $${counterOffer.toFixed(2)}? That's the best I can do.`;
-    } else if (messageNumber === 2) {
+    } else if (messageNumber === 3) {
       // Final response - accept if within range, reject if too low
-      if (userOffer >= minPrice) {
+      if (userOffer >= minAcceptablePrice) {
         setBargainStatus('accepted');
+        setShowAddToCart(true);
         setTimeout(async () => {
-          await storeBargainInDB(userOffer);
-          onAcceptedOffer(userOffer);
+          try {
+            await storeBargainInDB(userOffer);
+            toast({
+              title: "Offer Accepted!",
+              description: "The seller has accepted your offer. You can now add it to cart.",
+            });
+          } catch (error) {
+            console.error('Error storing bargain:', error);
+          }
         }, 1500);
-        return `Alright, you've got a deal! I'll accept $${userOffer.toFixed(2)}. Let's proceed to checkout.`;
+        return `Alright, you've got a deal! I'll accept $${userOffer.toFixed(2)}.`;
       } else {
         setBargainStatus('rejected');
-        return `I'm sorry, but I can't go that low. My minimum price is $${minPrice.toFixed(2)}. Thank you for your interest!`;
+        return `I'm sorry, but I can't go that low. Thank you for your interest!`;
       }
     }
     
@@ -295,7 +333,7 @@ const AutoBargainingChat: React.FC<AutoBargainingChatProps> = ({
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={`Make an offer (min: $${minPrice.toFixed(2)})...`}
+              placeholder="Make an offer with $ amount..."
               disabled={isTyping}
             />
             <Button 
@@ -307,10 +345,18 @@ const AutoBargainingChat: React.FC<AutoBargainingChatProps> = ({
             </Button>
           </div>
         ) : (
-          <div className="text-center">
-            {bargainStatus === 'accepted' ? (
-              <div className="text-green-600 font-medium">
-                🎉 Offer accepted! Redirecting to checkout...
+          <div className="text-center space-y-2">
+            {bargainStatus === 'accepted' && showAddToCart ? (
+              <div className="space-y-2">
+                <div className="text-green-600 font-medium">
+                  🎉 Offer accepted!
+                </div>
+                <Button 
+                  onClick={() => addToCartManually(currentOffer || 0)}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                >
+                  Add to Cart
+                </Button>
               </div>
             ) : bargainStatus === 'rejected' ? (
               <div className="text-red-600">
@@ -318,18 +364,17 @@ const AutoBargainingChat: React.FC<AutoBargainingChatProps> = ({
               </div>
             ) : (
               <div className="text-muted-foreground">
-                💬 Message limit reached ({messageCount}/{maxMessages})
+                💬 Attempt limit reached ({messageCount}/{maxMessages})
               </div>
             )}
           </div>
         )}
       </div>
 
-      {/* Price info */}
+      {/* Price info - Only show original price */}
       <div className="px-4 pb-4">
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>Original: ${initialPrice.toFixed(2)}</span>
-          <span>Min acceptable: ${minPrice.toFixed(2)}</span>
+        <div className="text-center text-xs text-muted-foreground">
+          <span>Original Price: ${initialPrice.toFixed(2)}</span>
         </div>
       </div>
     </Card>

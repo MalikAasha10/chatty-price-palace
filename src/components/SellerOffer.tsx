@@ -9,7 +9,7 @@ import AutoBargainingChat from './AutoBargainingChat';
 import AddToCartButton from './AddToCartButton';
 
 interface SellerOfferProps {
-  sellerId: number;
+  sellerId: string;
   sellerName: string;
   sellerRating: number;
   sellerReviews: number;
@@ -21,7 +21,7 @@ interface SellerOfferProps {
   isPreferredSeller?: boolean;
   productId?: string;
   productTitle?: string;
-  discountPercentage?: number;
+  bargainThreshold?: number;
 }
 
 const SellerOffer: React.FC<SellerOfferProps> = ({
@@ -37,7 +37,7 @@ const SellerOffer: React.FC<SellerOfferProps> = ({
   isPreferredSeller = false,
   productId = "demo-product-id",
   productTitle = "Product",
-  discountPercentage = 5
+  bargainThreshold = 0.85
 }) => {
   const navigate = useNavigate();
   const [showBargainingChat, setShowBargainingChat] = useState(false);
@@ -51,53 +51,14 @@ const SellerOffer: React.FC<SellerOfferProps> = ({
     setShowBargainingChat(false);
   };
   
-  const handleAcceptedOffer = async (finalPrice: number) => {
+  const handleOfferAccepted = (finalPrice: number) => {
     setCurrentPrice(finalPrice);
     setShowBargainingChat(false);
     
-    // Add to cart with bargained price
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        toast({
-          title: "Login Required",
-          description: "Please log in to complete this action.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const response = await fetch('/api/cart', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          productId: productId,
-          quantity: 1,
-          bargainedPrice: finalPrice
-        })
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Success!",
-          description: "Product added to cart at bargained price. You can now proceed to checkout.",
-        });
-        
-        // Navigate to cart page
-        navigate('/cart');
-      } else {
-        throw new Error('Failed to add to cart');
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add product to cart. Please try again.",
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: "Success!",
+      description: "Bargain completed! Product has been added to your cart.",
+    });
   };
 
   return (
@@ -166,9 +127,9 @@ const SellerOffer: React.FC<SellerOfferProps> = ({
             initialPrice={initialPrice}
             productId={productId}
             productTitle={productTitle}
-            discountPercentage={discountPercentage}
+            bargainThreshold={bargainThreshold}
             onClose={handleCloseChat}
-            onAcceptedOffer={handleAcceptedOffer}
+            onOfferAccepted={handleOfferAccepted}
           />
         </div>
       )}

@@ -25,8 +25,7 @@ exports.createBargainSession = async (req, res) => {
       });
     }
 
-    // Validate initial offer - should be less than product price and within 5% discount limit
-    const minAcceptablePrice = product.price * 0.95; // 5% discount limit
+    // Validate initial offer - should be less than product price and reasonable
     if (initialOffer >= product.price) {
       return res.status(400).json({
         success: false,
@@ -34,10 +33,10 @@ exports.createBargainSession = async (req, res) => {
       });
     }
     
-    if (initialOffer < minAcceptablePrice) {
+    if (initialOffer <= 0) {
       return res.status(400).json({
         success: false,
-        message: `Offer must be at least $${minAcceptablePrice.toFixed(2)} (maximum 5% discount allowed)`
+        message: 'Initial offer must be greater than zero'
       });
     }
 
@@ -45,6 +44,7 @@ exports.createBargainSession = async (req, res) => {
     const existingBargain = await Bargain.findOne({
       productId,
       buyerId: req.user._id,
+      sellerId: product.sellerRef,
       status: 'active'
     });
 
@@ -62,7 +62,7 @@ exports.createBargainSession = async (req, res) => {
       buyerId: req.user._id,
       sellerId: product.sellerRef,
       initialPrice: product.price,
-      currentPrice: product.price,
+      currentPrice: initialOffer,
       messages: [
         {
           sender: 'buyer',
@@ -75,40 +75,15 @@ exports.createBargainSession = async (req, res) => {
 
     await bargain.save();
 
-    // If bargain is accepted (initial offer within acceptable range), add to cart
+    // Auto-accept if initial offer meets the minimum acceptable price
     if (initialOffer >= product.minAcceptablePrice) {
-      try {
-        const Cart = require('../models/Cart');
-        let cart = await Cart.findOne({ userId: req.user._id });
-        
-        if (!cart) {
-          cart = new Cart({ userId: req.user._id, items: [] });
-        }
-        
-        // Check if product already in cart
-        const existingItem = cart.items.find(item => 
-          item.productId.toString() === productId.toString()
-        );
-        
-        if (existingItem) {
-          existingItem.quantity += 1;
-          existingItem.bargainedPrice = initialOffer;
-        } else {
-          cart.items.push({
-            productId,
-            quantity: 1,
-            bargainedPrice: initialOffer
-          });
-        }
-        
-        await cart.save();
-        
-        // Update bargain status to accepted
-        bargain.status = 'accepted';
-        await bargain.save();
-      } catch (cartError) {
-        console.error('Error adding to cart:', cartError);
-      }
+      bargain.status = 'accepted';
+      bargain.currentPrice = initialOffer;
+      bargain.messages.push({
+        sender: 'seller',
+        text: `Great! I can accept your offer of $${initialOffer.toFixed(2)}. That's a fair deal!`,
+        isOffer: false
+      });
     }
 
     res.status(201).json({
@@ -248,16 +223,16 @@ exports.addMessage = async (req, res) => {
       });
     }
     
-    // Check message limit (2 messages per user)
+    // Check message limit (3 messages per user)
     const userMessages = bargain.messages.filter(msg => {
       const sender = msg.sender === 'buyer' ? 'buyer' : 'seller';
       return (sender === 'buyer' && isBuyer) || (sender === 'seller' && isSeller);
     });
     
-    if (userMessages.length >= 2) {
+    if (userMessages.length >= 3) {
       return res.status(400).json({
         success: false,
-        message: 'Message limit reached (2 messages per participant)'
+        message: 'Message limit reached (3 messages per participant)'
       });
     }
     

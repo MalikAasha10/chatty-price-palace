@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/dialog';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import SellerOffer from '@/components/SellerOffer';
+import ProductSellers from '@/components/ProductSellers';
 import { Product } from '@/hooks/useProducts';
 import { useAddToCart } from '@/hooks/useCart';
 
@@ -165,60 +165,11 @@ const ProductPage: React.FC = () => {
 
             <p className="text-gray-700 leading-relaxed">{product.description}</p>
 
-            {/* Sellers Section */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Available from these sellers:</h3>
-              <div className="space-y-3">
-                <SellerOffer
-                  sellerId={1}
-                  sellerName={product.sellerRef?.storeName || product.sellerRef?.name || "Main Store"}
-                  sellerRating={4.8}
-                  sellerReviews={127}
-                  initialPrice={hasDiscount ? product.discountedPrice : product.price}
-                  stock={15}
-                  fulfillment="BargainBay"
-                  deliveryDays={2}
-                  responseRate={98}
-                  isPreferredSeller={true}
-                  productId={id}
-                  productTitle={product.title}
-                  discountPercentage={product.discountPercentage || 5}
-                />
-                
-                {/* Additional sellers for same product */}
-                <SellerOffer
-                  sellerId={2}
-                  sellerName="Tech Hub Premium"
-                  sellerRating={4.6}
-                  sellerReviews={89}
-                  initialPrice={(hasDiscount ? product.discountedPrice : product.price) * 1.05}
-                  stock={8}
-                  fulfillment="Seller"
-                  deliveryDays={3}
-                  responseRate={95}
-                  isPreferredSeller={false}
-                  productId={id}
-                  productTitle={product.title}
-                  discountPercentage={3}
-                />
-                
-                <SellerOffer
-                  sellerId={3}
-                  sellerName="BargainBay Direct"
-                  sellerRating={4.9}
-                  sellerReviews={203}
-                  initialPrice={(hasDiscount ? product.discountedPrice : product.price) * 0.98}
-                  stock={25}
-                  fulfillment="BargainBay"
-                  deliveryDays={1}
-                  responseRate={99}
-                  isPreferredSeller={false}
-                  productId={id}
-                  productTitle={product.title}
-                  discountPercentage={7}
-                />
-              </div>
-            </div>
+            {/* Multiple Sellers Section */}
+            <ProductSellers 
+              productId={id || ""} 
+              productTitle={product.title}
+            />
 
             {product.sellerRef && (
               <div className="border-t pt-4">

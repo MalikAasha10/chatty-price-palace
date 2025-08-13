@@ -234,3 +234,35 @@ exports.getSellerProducts = async (req, res) => {
     });
   }
 };
+
+// @desc    Search products by title (for multiple sellers)
+// @route   GET /api/products/search
+// @access  Public
+exports.searchProducts = async (req, res) => {
+  try {
+    const { title } = req.query;
+    
+    if (!title) {
+      return res.status(400).json({
+        success: false,
+        message: 'Search title is required'
+      });
+    }
+    
+    // Find products with similar titles from different sellers
+    const products = await Product.find({
+      title: { $regex: title, $options: 'i' }
+    }).populate('sellerRef', 'name storeName');
+    
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      products
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
