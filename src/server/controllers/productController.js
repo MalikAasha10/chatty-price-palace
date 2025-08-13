@@ -242,17 +242,23 @@ exports.searchProducts = async (req, res) => {
   try {
     const { title } = req.query;
     
-    if (!title) {
-      return res.status(400).json({
-        success: false,
-        message: 'Search title is required'
+    // Handle empty or missing search query gracefully
+    if (!title || typeof title !== 'string' || title.trim().length === 0) {
+      return res.status(200).json({
+        success: true,
+        count: 0,
+        products: [],
+        message: 'No search query provided'
       });
     }
     
+    // Sanitize search input to prevent regex injection
+    const sanitizedTitle = title.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    
     // Find products with similar titles from different sellers
     const products = await Product.find({
-      title: { $regex: title, $options: 'i' }
-    }).populate('sellerRef', 'name storeName');
+      title: { $regex: sanitizedTitle, $options: 'i' }
+    }).populate('sellerRef', 'name storeName rating reviews responseRate');
     
     res.status(200).json({
       success: true,
@@ -260,9 +266,12 @@ exports.searchProducts = async (req, res) => {
       products
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
+    console.error('Search products error:', error);
+    res.status(200).json({
+      success: true,
+      count: 0,
+      products: [],
+      message: 'Search failed, showing empty results'
     });
   }
 };

@@ -7,7 +7,7 @@ const Product = require('../models/Product');
 // @access  Private
 exports.createBargainSession = async (req, res) => {
   try {
-    const { productId, initialOffer } = req.body;
+    const { productId, initialOffer, sellerId } = req.body;
     
     if (!productId || !initialOffer) {
       return res.status(400).json({
@@ -24,6 +24,9 @@ exports.createBargainSession = async (req, res) => {
         message: 'Product not found'
       });
     }
+
+    // Use provided sellerId or default to product's seller
+    const finalSellerId = sellerId || product.sellerRef;
 
     // Validate initial offer - should be less than product price and reasonable
     if (initialOffer >= product.price) {
@@ -44,7 +47,7 @@ exports.createBargainSession = async (req, res) => {
     const existingBargain = await Bargain.findOne({
       productId,
       buyerId: req.user._id,
-      sellerId: product.sellerRef,
+      sellerId: finalSellerId,
       status: 'active'
     });
 
@@ -60,7 +63,7 @@ exports.createBargainSession = async (req, res) => {
     const bargain = new Bargain({
       productId,
       buyerId: req.user._id,
-      sellerId: product.sellerRef,
+      sellerId: finalSellerId,
       initialPrice: product.price,
       currentPrice: initialOffer,
       messages: [
@@ -75,8 +78,9 @@ exports.createBargainSession = async (req, res) => {
 
     await bargain.save();
 
-    // Auto-accept if initial offer meets the minimum acceptable price
-    if (initialOffer >= product.minAcceptablePrice) {
+    // Auto-accept if initial offer meets the minimum acceptable price (85% threshold)
+    const minAcceptablePrice = product.minAcceptablePrice || (product.price * 0.85);
+    if (initialOffer >= minAcceptablePrice) {
       bargain.status = 'accepted';
       bargain.currentPrice = initialOffer;
       bargain.messages.push({
@@ -84,6 +88,7 @@ exports.createBargainSession = async (req, res) => {
         text: `Great! I can accept your offer of $${initialOffer.toFixed(2)}. That's a fair deal!`,
         isOffer: false
       });
+      await bargain.save();
     }
 
     res.status(201).json({

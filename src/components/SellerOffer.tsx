@@ -22,6 +22,7 @@ interface SellerOfferProps {
   productId?: string;
   productTitle?: string;
   bargainThreshold?: number;
+  allowBargaining?: boolean;
 }
 
 const SellerOffer: React.FC<SellerOfferProps> = ({
@@ -37,7 +38,8 @@ const SellerOffer: React.FC<SellerOfferProps> = ({
   isPreferredSeller = false,
   productId = "demo-product-id",
   productTitle = "Product",
-  bargainThreshold = 0.85
+  bargainThreshold = 0.85,
+  allowBargaining = true
 }) => {
   const navigate = useNavigate();
   const [showBargainingChat, setShowBargainingChat] = useState(false);
@@ -99,14 +101,16 @@ const SellerOffer: React.FC<SellerOfferProps> = ({
           <div className="text-sm text-gray-500 mb-2">{stock} in stock</div>
           
           <div className="flex space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="border-brand-400 text-brand-600 hover:bg-brand-50"
-              onClick={handleBargainClick}
-            >
-              <MessageSquare className="h-4 w-4 mr-1" /> Bargain
-            </Button>
+            {allowBargaining && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="border-brand-400 text-brand-600 hover:bg-brand-50"
+                onClick={handleBargainClick}
+              >
+                <MessageSquare className="h-4 w-4 mr-1" /> Bargain
+              </Button>
+            )}
             
             <AddToCartButton
               productId={productId}

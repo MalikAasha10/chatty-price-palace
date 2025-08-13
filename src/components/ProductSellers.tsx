@@ -95,6 +95,7 @@ const ProductSellers: React.FC<ProductSellersProps> = ({ productId, productTitle
                 ? product.minAcceptablePrice / product.price 
                 : 0.85
             }
+            allowBargaining={product.allowBargaining}
           />
         ))}
       </div>

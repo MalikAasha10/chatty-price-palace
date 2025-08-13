@@ -375,6 +375,7 @@ const AutoBargainingChat: React.FC<AutoBargainingChatProps> = ({
       <div className="px-4 pb-4">
         <div className="text-center text-xs text-muted-foreground">
           <span>Original Price: ${initialPrice.toFixed(2)}</span>
+          <span className="block mt-1">Attempts: {messageCount}/{maxMessages}</span>
         </div>
       </div>
     </Card>
