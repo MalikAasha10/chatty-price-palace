@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { toast } from '@/components/ui/use-toast';
 import { Star, ThumbsUp, MessageSquare, Shield, Truck, Clock } from 'lucide-react';
 import AutoBargainingChat from './AutoBargainingChat';
+import AddToCartButton from './AddToCartButton';
 
 interface SellerOfferProps {
   sellerId: number;
@@ -36,6 +39,7 @@ const SellerOffer: React.FC<SellerOfferProps> = ({
   productTitle = "Product",
   discountPercentage = 5
 }) => {
+  const navigate = useNavigate();
   const [showBargainingChat, setShowBargainingChat] = useState(false);
   const [currentPrice, setCurrentPrice] = useState(initialPrice);
   
@@ -47,23 +51,53 @@ const SellerOffer: React.FC<SellerOfferProps> = ({
     setShowBargainingChat(false);
   };
   
-  const handleAcceptedOffer = (finalPrice: number) => {
+  const handleAcceptedOffer = async (finalPrice: number) => {
     setCurrentPrice(finalPrice);
     setShowBargainingChat(false);
     
-    // Prepare checkout data
-    const checkoutItems = [{
-      productId: productId,
-      title: productTitle,
-      price: initialPrice,
-      negotiatedPrice: finalPrice,
-      quantity: 1,
-      image: '/placeholder.svg',
-      seller: sellerName
-    }];
-    
-    // Navigate to checkout
-    window.location.href = `/checkout?items=${encodeURIComponent(JSON.stringify(checkoutItems))}`;
+    // Add to cart with bargained price
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast({
+          title: "Login Required",
+          description: "Please log in to complete this action.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await fetch('/api/cart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productId: productId,
+          quantity: 1,
+          bargainedPrice: finalPrice
+        })
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success!",
+          description: "Product added to cart at bargained price. You can now proceed to checkout.",
+        });
+        
+        // Navigate to cart page
+        navigate('/cart');
+      } else {
+        throw new Error('Failed to add to cart');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add product to cart. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -113,12 +147,13 @@ const SellerOffer: React.FC<SellerOfferProps> = ({
               <MessageSquare className="h-4 w-4 mr-1" /> Bargain
             </Button>
             
-            <Button 
-              size="sm" 
+            <AddToCartButton
+              productId={productId}
+              productTitle={productTitle}
+              price={currentPrice}
+              size="sm"
               className="bg-brand-500 hover:bg-brand-600"
-            >
-              Add to Cart
-            </Button>
+            />
           </div>
         </div>
       </div>

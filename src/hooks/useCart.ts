@@ -17,6 +17,7 @@ export interface CartItem {
     };
   };
   quantity: number;
+  bargainedPrice?: number;
 }
 
 export interface Cart {
@@ -50,9 +51,9 @@ export const useAddToCart = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ productId, quantity = 1 }: { productId: string; quantity?: number }) => {
+    mutationFn: async ({ productId, quantity = 1, bargainedPrice }: { productId: string; quantity?: number; bargainedPrice?: number }) => {
       const { data } = await axios.post('/api/cart', 
-        { productId, quantity },
+        { productId, quantity, bargainedPrice },
         { headers: getAuthHeaders() }
       );
       return data;

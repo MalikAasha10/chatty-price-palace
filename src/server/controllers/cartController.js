@@ -38,7 +38,7 @@ exports.getCart = async (req, res) => {
 // @access  Private
 exports.addToCart = async (req, res) => {
   try {
-    const { productId, quantity = 1 } = req.body;
+    const { productId, quantity = 1, bargainedPrice } = req.body;
 
     if (!productId) {
       return res.status(400).json({
@@ -70,9 +70,17 @@ exports.addToCart = async (req, res) => {
     if (existingItemIndex >= 0) {
       // Update quantity
       cart.items[existingItemIndex].quantity += quantity;
+      // Update bargained price if provided
+      if (bargainedPrice) {
+        cart.items[existingItemIndex].bargainedPrice = bargainedPrice;
+      }
     } else {
       // Add new item
-      cart.items.push({ productId, quantity });
+      const cartItem = { productId, quantity };
+      if (bargainedPrice) {
+        cartItem.bargainedPrice = bargainedPrice;
+      }
+      cart.items.push(cartItem);
     }
 
     await cart.save();

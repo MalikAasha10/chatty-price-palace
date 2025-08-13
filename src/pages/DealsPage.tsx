@@ -13,56 +13,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useDealsProducts, useBargainableProducts } from '@/hooks/useProducts';
 import { Product } from '@/hooks/useProducts';
 
-// Sample deal products data
-const bargainProducts = [
-  {
-    id: 101,
-    name: 'Sony WH-1000XM4 Wireless Noise Cancelling Headphones',
-    imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
-    price: 299.99,
-    originalPrice: 349.99,
-    rating: 4.8,
-    sellerCount: 7,
-    category: 'Electronics',
-    bestSeller: true,
-    isBargainable: true
-  },
-  {
-    id: 102,
-    name: 'Samsung 55" QLED 4K Smart TV',
-    imageUrl: 'https://images.unsplash.com/photo-1593784991095-a205069470b6',
-    price: 799.99,
-    originalPrice: 999.99,
-    rating: 4.6,
-    sellerCount: 5,
-    category: 'Electronics',
-    isBargainable: true
-  },
-  {
-    id: 103,
-    name: 'Leather Office Chair with Ergonomic Design',
-    imageUrl: 'https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1',
-    price: 249.99,
-    originalPrice: 299.99,
-    rating: 4.5,
-    sellerCount: 3,
-    category: 'Furniture',
-    isBargainable: true
-  },
-  {
-    id: 104,
-    name: 'Professional DSLR Camera with Dual Lens Kit',
-    imageUrl: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd',
-    price: 1199.99,
-    originalPrice: 1499.99,
-    rating: 4.9,
-    sellerCount: 4,
-    category: 'Photography',
-    bestSeller: true,
-    isBargainable: true
-  }
-];
-
+// Fetch real deals data from API - no fake data
 const limitedTimeDeals = [
   {
     id: 201,

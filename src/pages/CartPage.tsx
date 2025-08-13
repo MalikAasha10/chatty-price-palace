@@ -117,9 +117,11 @@ const CartPage: React.FC = () => {
                         </p>
                         <div className="flex items-center space-x-2 mt-2">
                           <span className="text-lg font-bold">
-                            ${(item.productId.discountedPrice || item.productId.price).toFixed(2)}
+                            ${(item.bargainedPrice || item.productId.discountedPrice || item.productId.price).toFixed(2)}
                           </span>
-                          {item.productId.discountedPrice && (
+                          {item.bargainedPrice ? (
+                            <Badge variant="secondary" className="text-xs">Bargained Price</Badge>
+                          ) : item.productId.discountedPrice && (
                             <span className="text-sm text-gray-500 line-through">
                               ${item.productId.price.toFixed(2)}
                             </span>
@@ -188,8 +190,8 @@ const CartPage: React.FC = () => {
                     <span>${cartData.totalPrice.toFixed(2)}</span>
                   </div>
                   
-                  <Button className="w-full mt-6" size="lg">
-                    Proceed to Checkout
+                  <Button className="w-full mt-6" size="lg" asChild>
+                    <Link to="/checkout">Proceed to Checkout</Link>
                   </Button>
                   
                   <Button variant="outline" className="w-full" asChild>

@@ -62,6 +62,7 @@ const AutoBargainingChat: React.FC<AutoBargainingChatProps> = ({
       const token = localStorage.getItem('token');
       if (!token) return;
 
+      // Store successful bargain in database
       const response = await fetch('/api/bargains', {
         method: 'POST',
         headers: {
@@ -79,9 +80,38 @@ const AutoBargainingChat: React.FC<AutoBargainingChatProps> = ({
       if (response.ok) {
         const data = await response.json();
         console.log('Bargain stored successfully:', data);
+        
+        // Add to cart after successful bargain
+        await addToCartAfterBargain(finalPrice);
       }
     } catch (error) {
       console.error('Error storing bargain:', error);
+    }
+  };
+
+  const addToCartAfterBargain = async (bargainedPrice: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('/api/cart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productId,
+          quantity: 1,
+          bargainedPrice
+        })
+      });
+
+      if (response.ok) {
+        console.log('Product added to cart after bargain');
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
     }
   };
 

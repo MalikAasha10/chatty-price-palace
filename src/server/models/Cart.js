@@ -11,6 +11,10 @@ const cartItemSchema = new mongoose.Schema({
     required: true,
     min: 1,
     default: 1
+  },
+  bargainedPrice: {
+    type: Number,
+    default: null
   }
 });
 
@@ -42,7 +46,8 @@ cartSchema.pre('save', async function(next) {
     await this.populate('items.productId');
     
     this.totalPrice = this.items.reduce((total, item) => {
-      const price = item.productId.discountedPrice || item.productId.price;
+      // Use bargained price if available, otherwise use discounted price or regular price
+      const price = item.bargainedPrice || item.productId.discountedPrice || item.productId.price;
       return total + (price * item.quantity);
     }, 0);
   } else {
