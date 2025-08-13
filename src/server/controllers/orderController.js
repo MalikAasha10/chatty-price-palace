@@ -132,10 +132,7 @@ exports.getOrders = async (req, res) => {
       ])
       .sort({ createdAt: -1 });
 
-    res.json({
-      success: true,
-      orders
-    });
+    res.json(orders);
 
   } catch (error) {
     console.error('Get orders error:', error);

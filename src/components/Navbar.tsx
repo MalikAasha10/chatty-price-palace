@@ -139,8 +139,13 @@ const Navbar = () => {
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link to={userRole === 'seller' ? '/seller-dashboard' : '/profile'}>
-                        My {userRole === 'seller' ? 'Dashboard' : 'Profile'}
+                      <Link to={userRole === 'seller' ? '/seller-dashboard' : '/user-dashboard'}>
+                        My {userRole === 'seller' ? 'Dashboard' : 'Dashboard'}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to={userRole === 'seller' ? '/seller-dashboard' : '/user-profile'}>
+                        {userRole === 'seller' ? 'Profile' : 'Profile Settings'}
                       </Link>
                     </DropdownMenuItem>
                     {userRole !== 'seller' && (
@@ -235,12 +240,14 @@ const Navbar = () => {
             </Link>
             {isLoggedIn ? (
               <>
-                <Link to="/profile" className="text-gray-700 py-2 border-b border-gray-100">
-                  My Account
+                <Link to={userRole === 'seller' ? '/seller-dashboard' : '/user-dashboard'} className="text-gray-700 py-2 border-b border-gray-100">
+                  My Dashboard
                 </Link>
-                <Link to="/orders" className="text-gray-700 py-2 border-b border-gray-100">
-                  My Orders
-                </Link>
+                {userRole !== 'seller' && (
+                  <Link to="/orders" className="text-gray-700 py-2 border-b border-gray-100">
+                    My Orders
+                  </Link>
+                )}
               </>
             ) : (
               <div className="flex flex-col space-y-2 pt-2">

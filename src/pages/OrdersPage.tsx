@@ -61,9 +61,10 @@ const OrdersPage = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        // Ensure response.data is an array
-        const ordersData = Array.isArray(response.data) ? response.data : [];
-        setOrders(ordersData);
+        // Handle different response formats
+        const ordersData = response.data?.orders || response.data || [];
+        const orders = Array.isArray(ordersData) ? ordersData : [];
+        setOrders(orders);
       } catch (err: any) {
         if (err.response?.status === 401) {
           navigate('/login');

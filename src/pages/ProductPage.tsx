@@ -48,6 +48,27 @@ const ProductPage: React.FC = () => {
   });
 
   const product: Product | undefined = data?.product;
+
+  // Add to browse history when product loads
+  useEffect(() => {
+    const addToBrowseHistory = async () => {
+      if (!product?._id || !token) return;
+      
+      try {
+        await axios.post('/api/history', {
+          productId: product._id
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch (error) {
+        console.error('Failed to add to browse history:', error);
+      }
+    };
+
+    if (product) {
+      addToBrowseHistory();
+    }
+  }, [product, token]);
   
   const hasDiscount = product?.discountPercentage && product.discountPercentage > 0;
 

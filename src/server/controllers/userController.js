@@ -110,39 +110,15 @@ exports.getUserOrders = async (req, res) => {
       });
     }
 
-    // For now, we'll return mock orders
-    // In a real implementation, you would fetch from an Orders collection
-    const orders = [
-      {
-        id: '12345',
-        date: '2025-05-01',
-        status: 'Delivered',
-        total: 125.99,
-        items: [
-          { id: 'p1', name: 'Wireless Headphones', price: 89.99, quantity: 1 },
-          { id: 'p2', name: 'Phone Case', price: 35.99, quantity: 1 }
-        ]
-      },
-      {
-        id: '12346',
-        date: '2025-04-22',
-        status: 'In Transit',
-        total: 89.99,
-        items: [
-          { id: 'p3', name: 'Smart Watch', price: 89.99, quantity: 1 }
-        ]
-      },
-      {
-        id: '12347',
-        date: '2025-03-15',
-        status: 'Processing',
-        total: 45.50,
-        items: [
-          { id: 'p4', name: 'USB Cable', price: 15.99, quantity: 1 },
-          { id: 'p5', name: 'Power Bank', price: 29.51, quantity: 1 }
-        ]
-      }
-    ];
+    const Order = require('../models/Order');
+    
+    // Fetch real orders from database
+    const orders = await Order.find({ userId: req.params.id })
+      .populate([
+        { path: 'items.productId', select: 'title images category' },
+        { path: 'items.sellerId', select: 'name storeName' }
+      ])
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
