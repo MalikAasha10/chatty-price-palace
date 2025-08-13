@@ -61,7 +61,9 @@ const OrdersPage = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        setOrders(response.data || []);
+        // Ensure response.data is an array
+        const ordersData = Array.isArray(response.data) ? response.data : [];
+        setOrders(ordersData);
       } catch (err: any) {
         if (err.response?.status === 401) {
           navigate('/login');
@@ -128,7 +130,7 @@ const OrdersPage = () => {
           <h1 className="text-3xl font-bold">My Orders</h1>
         </div>
 
-        {orders.length === 0 ? (
+        {!Array.isArray(orders) || orders.length === 0 ? (
           <Card className="p-8 text-center">
             <ShoppingBag className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">You have not placed any orders yet</h2>
@@ -152,8 +154,8 @@ const OrdersPage = () => {
                     <th className="px-6 py-3 text-left text-sm font-medium">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
-                  {orders.map((order) => (
+                 <tbody className="divide-y divide-border">
+                   {Array.isArray(orders) && orders.map((order) => (
                     <tr key={order._id} className="hover:bg-muted/50">
                       <td className="px-6 py-4 text-sm font-mono">
                         #{order._id.slice(-8)}

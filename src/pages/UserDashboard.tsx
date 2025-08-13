@@ -20,14 +20,14 @@ const UserDashboard = () => {
     const fetchRecentOrders = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (!token || !userData) return;
+        if (!token || !userData?._id) return;
 
         const response = await axios.get('/api/orders', {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        // Get last 5 orders
-        const orders = (response.data || []).slice(0, 5);
+        // Get last 5 orders - ensure response.data is an array
+        const orders = Array.isArray(response.data) ? response.data.slice(0, 5) : [];
         setRecentOrders(orders);
       } catch (err) {
         console.error('Failed to fetch orders:', err);

@@ -36,21 +36,32 @@ const BrowseHistoryPage = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        const userId = userResponse.data._id;
+        const userId = userResponse.data?._id;
+        if (!userId) {
+          setError('Unable to get user information');
+          return;
+        }
+        
         const response = await axios.get(`/api/history/user/${userId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        const historyData = response.data.data || [];
-        const formattedHistory = historyData.map((item: any) => ({
-          _id: item._id,
-          productId: item.productId._id,
-          productName: item.productId.name,
-          productImage: item.productId.image,
-          viewedAt: item.viewedAt
-        }));
+        const historyData = response.data?.data || response.data || [];
         
-        setHistory(formattedHistory);
+        // Ensure historyData is an array and map safely
+        if (Array.isArray(historyData)) {
+          const formattedHistory = historyData.map((item: any) => ({
+            _id: item._id,
+            productId: item.productId?._id || item.productId,
+            productName: item.productId?.name || 'Unknown Product',
+            productImage: item.productId?.image,
+            viewedAt: item.viewedAt
+          }));
+          
+          setHistory(formattedHistory);
+        } else {
+          setHistory([]);
+        }
 
       } catch (err: any) {
         if (err.response?.status === 401) {
@@ -106,7 +117,7 @@ const BrowseHistoryPage = () => {
           <h1 className="text-3xl font-bold">Browse History</h1>
         </div>
 
-        {history.length === 0 ? (
+        {!Array.isArray(history) || history.length === 0 ? (
           <Card className="p-8 text-center">
             <History className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">No browsing history yet</h2>
@@ -119,7 +130,7 @@ const BrowseHistoryPage = () => {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {history.map((item) => (
+            {Array.isArray(history) && history.map((item) => (
               <Card key={item._id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="aspect-square bg-muted flex items-center justify-center">
                   <img
