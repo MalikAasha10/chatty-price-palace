@@ -123,12 +123,23 @@ const CheckoutPage: React.FC = () => {
 
       // Prepare order data
       const orderData = {
-        items: items.map(item => ({
+        cartItems: items.map(item => ({
           productId: item.productId._id,
+          name: item.productId.title,
           quantity: item.quantity,
+          price: item.bargainedPrice || item.productId.discountedPrice || item.productId.price,
           bargainId: item.bargainedPrice ? item._id : null
         })),
-        shippingAddress,
+        shippingDetails: {
+          fullName: shippingAddress.fullName,
+          address: shippingAddress.address,
+          city: shippingAddress.city,
+          state: shippingAddress.state,
+          zipCode: shippingAddress.zipCode,
+          country: shippingAddress.country,
+          phone: shippingAddress.phone,
+          email: shippingAddress.email
+        },
         paymentMethod: selectedPaymentMethod,
         paymentStatus,
         transactionId

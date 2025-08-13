@@ -5,14 +5,43 @@ const Bargain = require('../models/Bargain');
 // Create a new order
 exports.createOrder = async (req, res) => {
   try {
-    const { items, shippingAddress, paymentMethod } = req.body;
+    const { cartItems, shippingDetails, paymentMethod, paymentStatus, transactionId } = req.body;
     const userId = req.user.id;
+
+    // Validation
+    if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'cartItems is required and must be a non-empty array'
+      });
+    }
+
+    if (!shippingDetails || !shippingDetails.fullName || !shippingDetails.address || !shippingDetails.phone || !shippingDetails.email) {
+      return res.status(400).json({
+        success: false,
+        message: 'shippingDetails is required with fullName, address, phone, and email'
+      });
+    }
+
+    if (!paymentMethod) {
+      return res.status(400).json({
+        success: false,
+        message: 'paymentMethod is required'
+      });
+    }
 
     let totalAmount = 0;
     const orderItems = [];
 
-    // Process each item
-    for (const item of items) {
+    // Process each cart item
+    for (const item of cartItems) {
+      if (!item.productId || !item.quantity || !item.price) {
+        return res.status(400).json({
+          success: false,
+          message: 'Each cart item must have productId, quantity, and price'
+        });
+      }
+
       const product = await Product.findById(item.productId);
       if (!product) {
         return res.status(404).json({
@@ -21,7 +50,7 @@ exports.createOrder = async (req, res) => {
         });
       }
 
-      let finalPrice = product.discountedPrice || product.price;
+      let finalPrice = item.price;
       let isBargained = false;
       let bargainId = null;
 
@@ -38,7 +67,7 @@ exports.createOrder = async (req, res) => {
       const orderItem = {
         productId: product._id,
         sellerId: product.sellerRef,
-        quantity: item.quantity || 1,
+        quantity: item.quantity,
         price: product.price,
         finalPrice: finalPrice,
         isBargained: isBargained,
@@ -54,9 +83,16 @@ exports.createOrder = async (req, res) => {
       userId,
       items: orderItems,
       totalAmount,
-      shippingAddress,
+      shippingAddress: {
+        fullName: shippingDetails.fullName,
+        address: shippingDetails.address,
+        city: shippingDetails.city,
+        state: shippingDetails.state,
+        zipCode: shippingDetails.zipCode,
+        country: shippingDetails.country || 'Pakistan'
+      },
       paymentMethod,
-      status: 'pending'
+      status: 'Pending'
     });
 
     await order.save();
