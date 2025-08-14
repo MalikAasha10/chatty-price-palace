@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { ArrowRight, Calendar, TrendingUp, Zap } from 'lucide-react';
 import { useFeaturedProducts } from '@/hooks/useProducts';
 
@@ -46,14 +47,51 @@ const heroBanners = [
 // No fake data - only use real products from API
 
 const Index = () => {
-  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
-  const currentBanner = heroBanners[currentBannerIndex];
+  const navigate = useNavigate();
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   
   // Fetch featured products from API
   const { data: productsData, isLoading } = useFeaturedProducts();
   
+  // Create carousel items from products and their images
+  const createCarouselItems = (products: any[]) => {
+    const items: Array<{id: string, productId: string, imageUrl: string, productTitle: string}> = [];
+    products?.forEach((product) => {
+      if (Array.isArray(product.images) && product.images.length > 0) {
+        product.images.forEach((image: any, index: number) => {
+          const imageUrl = typeof image === 'string' ? image : image.url;
+          items.push({
+            id: `${product._id}-${index}`,
+            productId: product._id,
+            imageUrl,
+            productTitle: product.title
+          });
+        });
+      } else {
+        items.push({
+          id: product._id,
+          productId: product._id,
+          imageUrl: 'https://placehold.co/400',
+          productTitle: product.title
+        });
+      }
+    });
+    return items;
+  };
+
+  // Auto-slide functionality
+  useEffect(() => {
+    if (!carouselApi) return;
+
+    const interval = setInterval(() => {
+      carouselApi.scrollNext();
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, [carouselApi]);
+
   // Convert API product data to format expected by ProductCard
-  const mapProductToCardProps = (product) => ({
+  const mapProductToCardProps = (product: any) => ({
     id: product._id,
     name: product.title,
     imageUrl: Array.isArray(product.images) && product.images.length > 0 
@@ -68,19 +106,13 @@ const Index = () => {
     isBargainable: product.allowBargaining
   });
 
-  // Banner rotation interval
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentBannerIndex(prevIndex => (prevIndex + 1) % heroBanners.length);
-    }, 6000);
-
-    return () => clearInterval(interval);
-  }, []);
-
   // Use real data from API - no fallback to fake data
   const featuredProducts = productsData?.featuredProducts?.map(mapProductToCardProps) || [];
   const newArrivals = productsData?.featuredProducts?.map(mapProductToCardProps) || [];
   const bestDeals = productsData?.dealsProducts?.map(mapProductToCardProps) || [];
+  
+  // Create carousel items from featured products
+  const carouselItems = createCarouselItems(productsData?.featuredProducts || []);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -100,54 +132,41 @@ const Index = () => {
             </div>
 
             {/* Product Carousel */}
-            <div className="relative">
+            <div className="relative max-w-6xl mx-auto">
               {isLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {Array.from({length: 4}).map((_, i) => (
-                    <div key={i} className="animate-pulse bg-white/10 rounded-lg h-80"></div>
-                  ))}
-                </div>
-              ) : featuredProducts.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {featuredProducts.slice(0, 8).map((product) => (
-                    <Link 
-                      key={product.id} 
-                      to={`/product/${product.id}`}
-                      className="group bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                    >
-                      <div className="aspect-square overflow-hidden">
-                        <img
-                          src={product.imageUrl}
-                          alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                        />
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold text-lg mb-2 line-clamp-2 text-gray-900">
-                          {product.name}
-                        </h3>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-2xl font-bold text-brand-600">
-                              ${product.price}
-                            </span>
-                            {product.originalPrice && (
-                              <span className="text-sm text-gray-500 line-through">
-                                ${product.originalPrice}
-                              </span>
-                            )}
+                <div className="animate-pulse bg-white/10 rounded-lg h-96"></div>
+              ) : carouselItems.length > 0 ? (
+                <Carousel
+                  setApi={setCarouselApi}
+                  className="w-full"
+                  opts={{
+                    align: "start",
+                    loop: true,
+                  }}
+                >
+                  <CarouselContent>
+                    {carouselItems.map((item) => (
+                      <CarouselItem key={item.id} className="md:basis-1/2 lg:basis-1/3">
+                        <div 
+                          className="p-1 cursor-pointer"
+                          onClick={() => navigate(`/product/${item.productId}`)}
+                        >
+                          <div className="bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                            <div className="aspect-square overflow-hidden">
+                              <img
+                                src={item.imageUrl}
+                                alt={item.productTitle}
+                                className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                              />
+                            </div>
                           </div>
-                          {product.isBargainable && (
-                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                              Bargainable
-                            </span>
-                          )}
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">{product.category}</p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="text-white border-white hover:bg-white hover:text-brand-600" />
+                  <CarouselNext className="text-white border-white hover:bg-white hover:text-brand-600" />
+                </Carousel>
               ) : (
                 <div className="text-center text-white py-12">
                   <p className="text-lg opacity-90">No featured products available at the moment.</p>
