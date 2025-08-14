@@ -22,7 +22,7 @@ const UserDashboard = () => {
         const token = localStorage.getItem('token');
         if (!token || !userData?._id) return;
 
-        const response = await axios.get(`/api/users/${userData._id}/orders`, {
+        const response = await axios.get('/api/orders', {
           headers: { Authorization: `Bearer ${token}` }
         });
 

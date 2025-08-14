@@ -57,22 +57,15 @@ const OrdersPage = () => {
           return;
         }
 
-        // First get user data to get user ID
-        const userResponse = await axios.get('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        if (!userResponse.data || !userResponse.data._id) {
-          throw new Error('Unable to get user information');
-        }
-
-        const response = await axios.get(`/api/users/${userResponse.data._id}/orders`, {
+        const response = await axios.get('/api/orders', {
           headers: { Authorization: `Bearer ${token}` }
         });
 
         // Handle the backend response format
         if (response.data.success && Array.isArray(response.data.data)) {
           setOrders(response.data.data);
+        } else if (Array.isArray(response.data)) {
+          setOrders(response.data);
         } else {
           setOrders([]);
         }

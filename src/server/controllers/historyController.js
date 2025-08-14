@@ -6,7 +6,7 @@ const BrowseHistory = require('../models/BrowseHistory');
 exports.getBrowseHistory = async (req, res) => {
   try {
     // Check if the requesting user is trying to access their own history
-    if (req.params.userId !== req.user.id.toString()) {
+    if (req.params.userId !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
         message: 'You can only access your own browse history'
@@ -36,7 +36,7 @@ exports.getBrowseHistory = async (req, res) => {
 exports.addBrowseHistory = async (req, res) => {
   try {
     const { productId } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     // Check if the product was already viewed recently (within last 24 hours)
     const recentView = await BrowseHistory.findOne({

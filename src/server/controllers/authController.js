@@ -197,9 +197,22 @@ exports.loginSeller = async (req, res) => {
 // @access  Private
 exports.getMe = async (req, res) => {
   try {
+    const user = req.user;
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    // Return user data directly (not wrapped in user object)
     res.status(200).json({
-      success: true,
-      user: req.user
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      type: user.type,
+      storeName: user.storeName, // for sellers
+      createdAt: user.createdAt
     });
   } catch (error) {
     console.error('getMe error:', error);

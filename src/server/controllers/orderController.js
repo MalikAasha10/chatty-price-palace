@@ -6,7 +6,7 @@ const Bargain = require('../models/Bargain');
 exports.createOrder = async (req, res) => {
   try {
     const { cartItems, shippingDetails, paymentMethod, paymentStatus, transactionId } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     // Validation
     if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
@@ -123,7 +123,7 @@ exports.createOrder = async (req, res) => {
 // Get all orders for a user
 exports.getOrders = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     
     const orders = await Order.find({ userId })
       .populate([
@@ -148,7 +148,7 @@ exports.getOrders = async (req, res) => {
 exports.getOrder = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const order = await Order.findOne({ _id: id, userId })
       .populate([
@@ -184,7 +184,7 @@ exports.updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    const sellerId = req.user.id;
+    const sellerId = req.user._id;
 
     // Find order where seller has items
     const order = await Order.findOne({

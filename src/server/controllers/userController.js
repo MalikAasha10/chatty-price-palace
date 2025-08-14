@@ -8,7 +8,7 @@ const Seller = require('../models/Seller');
 exports.getUserProfile = async (req, res) => {
   try {
     // Check if the requesting user is trying to access their own profile
-    if (req.params.id !== req.user.id.toString()) {
+    if (req.params.id !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
         message: 'You can only access your own profile'
@@ -47,7 +47,7 @@ exports.getUserProfile = async (req, res) => {
 exports.updateUserProfile = async (req, res) => {
   try {
     // Check if the requesting user is trying to update their own profile
-    if (req.params.id !== req.user.id.toString()) {
+    if (req.params.id !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
         message: 'You can only update your own profile'
@@ -103,7 +103,7 @@ exports.updateUserProfile = async (req, res) => {
 exports.getUserOrders = async (req, res) => {
   try {
     // Check if the requesting user is trying to access their own orders
-    if (req.params.id !== req.user.id.toString()) {
+    if (req.params.id !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
         message: 'You can only access your own orders'
@@ -138,7 +138,7 @@ exports.getUserOrders = async (req, res) => {
 exports.changePassword = async (req, res) => {
   try {
     // Check if the requesting user is trying to change their own password
-    if (req.params.id !== req.user.id.toString()) {
+    if (req.params.id !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
         message: 'You can only change your own password'
