@@ -22,16 +22,20 @@ const UserDashboard = () => {
         const token = localStorage.getItem('token');
         if (!token || !userData?._id) return;
 
-        const response = await axios.get('/api/orders', {
+        const response = await axios.get(`/api/users/${userData._id}/orders`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        // Handle different response formats
-        const ordersData = response.data?.orders || response.data || [];
-        const orders = Array.isArray(ordersData) ? ordersData.slice(0, 5) : [];
-        setRecentOrders(orders);
+        // Handle the backend response format
+        if (response.data.success && Array.isArray(response.data.data)) {
+          const orders = response.data.data.slice(0, 5);
+          setRecentOrders(orders);
+        } else {
+          setRecentOrders([]);
+        }
       } catch (err) {
         console.error('Failed to fetch orders:', err);
+        setRecentOrders([]);
       } finally {
         setOrdersLoading(false);
       }

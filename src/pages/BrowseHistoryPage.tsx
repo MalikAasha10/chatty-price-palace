@@ -46,19 +46,24 @@ const BrowseHistoryPage = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        const historyData = response.data?.data || response.data || [];
-        
-        // Ensure historyData is an array and map safely
-        if (Array.isArray(historyData)) {
-          const formattedHistory = historyData.map((item: any) => ({
-            _id: item._id,
-            productId: item.productId?._id || item.productId,
-            productName: item.productId?.name || 'Unknown Product',
-            productImage: item.productId?.image,
-            viewedAt: item.viewedAt
-          }));
+        // Handle the backend response format
+        if (response.data.success) {
+          const historyData = response.data.data || [];
           
-          setHistory(formattedHistory);
+          // Ensure historyData is an array and map safely
+          if (Array.isArray(historyData)) {
+            const formattedHistory = historyData.map((item: any) => ({
+              _id: item._id,
+              productId: item.productId?._id || item.productId,
+              productName: item.productId?.name || item.productId?.title || 'Unknown Product',
+              productImage: item.productId?.image || item.productId?.images?.[0] || '/placeholder.svg',
+              viewedAt: item.viewedAt
+            }));
+            
+            setHistory(formattedHistory);
+          } else {
+            setHistory([]);
+          }
         } else {
           setHistory([]);
         }

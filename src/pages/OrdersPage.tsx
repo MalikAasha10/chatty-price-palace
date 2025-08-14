@@ -57,14 +57,25 @@ const OrdersPage = () => {
           return;
         }
 
-        const response = await axios.get('/api/orders', {
+        // First get user data to get user ID
+        const userResponse = await axios.get('/api/auth/me', {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        // Handle different response formats
-        const ordersData = response.data?.orders || response.data || [];
-        const orders = Array.isArray(ordersData) ? ordersData : [];
-        setOrders(orders);
+        if (!userResponse.data || !userResponse.data._id) {
+          throw new Error('Unable to get user information');
+        }
+
+        const response = await axios.get(`/api/users/${userResponse.data._id}/orders`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        // Handle the backend response format
+        if (response.data.success && Array.isArray(response.data.data)) {
+          setOrders(response.data.data);
+        } else {
+          setOrders([]);
+        }
       } catch (err: any) {
         if (err.response?.status === 401) {
           navigate('/login');
@@ -152,7 +163,6 @@ const OrdersPage = () => {
                     <th className="px-6 py-3 text-left text-sm font-medium">Date</th>
                     <th className="px-6 py-3 text-left text-sm font-medium">Status</th>
                     <th className="px-6 py-3 text-left text-sm font-medium">Total</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium">Actions</th>
                   </tr>
                 </thead>
                  <tbody className="divide-y divide-border">
@@ -171,85 +181,6 @@ const OrdersPage = () => {
                       </td>
                       <td className="px-6 py-4 text-sm font-semibold">
                         ${order.totalAmount.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => setSelectedOrder(order)}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              View
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle>Order Details #{order._id.slice(-8)}</DialogTitle>
-                            </DialogHeader>
-                            
-                            {selectedOrder && (
-                              <div className="space-y-6">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <h3 className="font-semibold mb-2">Order Information</h3>
-                                    <p><span className="font-medium">Date:</span> {format(new Date(selectedOrder.createdAt), 'MMM dd, yyyy HH:mm')}</p>
-                                    <p><span className="font-medium">Status:</span> 
-                                      <Badge className={`ml-2 ${getStatusColor(selectedOrder.status)}`}>
-                                        {selectedOrder.status}
-                                      </Badge>
-                                    </p>
-                                    <p><span className="font-medium">Payment:</span> {selectedOrder.paymentMethod}</p>
-                                  </div>
-                                  
-                                  <div>
-                                    <h3 className="font-semibold mb-2">Shipping Address</h3>
-                                    <div className="text-sm space-y-1">
-                                      <p>{selectedOrder.shippingAddress.fullName}</p>
-                                      <p>{selectedOrder.shippingAddress.address}</p>
-                                      <p>{selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state}</p>
-                                      <p>{selectedOrder.shippingAddress.zipCode}</p>
-                                      <p>{selectedOrder.shippingAddress.country}</p>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div>
-                                  <h3 className="font-semibold mb-3">Order Items</h3>
-                                  <div className="border rounded-lg overflow-hidden">
-                                    <table className="w-full text-sm">
-                                      <thead className="bg-muted">
-                                        <tr>
-                                          <th className="px-4 py-2 text-left">Item</th>
-                                          <th className="px-4 py-2 text-left">Quantity</th>
-                                          <th className="px-4 py-2 text-left">Price</th>
-                                          <th className="px-4 py-2 text-left">Subtotal</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody className="divide-y divide-border">
-                                        {selectedOrder.items.map((item, index) => (
-                                          <tr key={index}>
-                                            <td className="px-4 py-2">{item.name || `Product ${item.productId.slice(-8)}`}</td>
-                                            <td className="px-4 py-2">{item.quantity}</td>
-                                            <td className="px-4 py-2">${item.finalPrice.toFixed(2)}</td>
-                                            <td className="px-4 py-2">${(item.finalPrice * item.quantity).toFixed(2)}</td>
-                                          </tr>
-                                        ))}
-                                      </tbody>
-                                      <tfoot className="bg-muted font-semibold">
-                                        <tr>
-                                          <td colSpan={3} className="px-4 py-2 text-right">Total:</td>
-                                          <td className="px-4 py-2">${selectedOrder.totalAmount.toFixed(2)}</td>
-                                        </tr>
-                                      </tfoot>
-                                    </table>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
                       </td>
                     </tr>
                   ))}
