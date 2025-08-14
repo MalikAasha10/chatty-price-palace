@@ -14,7 +14,7 @@ exports.getBrowseHistory = async (req, res) => {
     }
 
     const history = await BrowseHistory.find({ userId: req.params.userId })
-      .populate('productId', 'name image price')
+      .populate('productId', 'title images price category description')
       .sort({ viewedAt: -1 })
       .limit(50); // Limit to last 50 viewed items
 

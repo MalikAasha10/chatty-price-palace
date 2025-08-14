@@ -46,9 +46,8 @@ const Navbar = () => {
           const response = await axios.get('/api/auth/me', {
             headers: { Authorization: `Bearer ${token}` }
           });
-          if (response.data.success) {
-            setUserData(response.data.user);
-          }
+          // Auth controller returns user data directly, not wrapped in user object
+          setUserData(response.data);
         } catch (error) {
           console.error('Error fetching user data:', error);
         }

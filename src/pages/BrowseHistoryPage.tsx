@@ -13,6 +13,9 @@ interface HistoryItem {
   productId: string;
   productName: string;
   productImage?: string;
+  productPrice: number;
+  productCategory: string;
+  productDescription: string;
   viewedAt: string;
 }
 
@@ -55,8 +58,11 @@ const BrowseHistoryPage = () => {
             const formattedHistory = historyData.map((item: any) => ({
               _id: item._id,
               productId: item.productId?._id || item.productId,
-              productName: item.productId?.name || item.productId?.title || 'Unknown Product',
-              productImage: item.productId?.image || item.productId?.images?.[0] || '/placeholder.svg',
+              productName: item.productId?.title || 'Unknown Product',
+              productImage: item.productId?.images?.[0] || '/placeholder.svg',
+              productPrice: item.productId?.price || 0,
+              productCategory: item.productId?.category || '',
+              productDescription: item.productId?.description || '',
               viewedAt: item.viewedAt
             }));
             
@@ -148,15 +154,26 @@ const BrowseHistoryPage = () => {
                   <h3 className="font-semibold text-lg mb-2 line-clamp-2">
                     {item.productName}
                   </h3>
-                  <p className="text-sm text-muted-foreground mb-3">
+                  <p className="text-sm text-muted-foreground mb-1">
+                    Category: {item.productCategory}
+                  </p>
+                  <p className="text-lg font-bold text-primary mb-2">
+                    ${item.productPrice}
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                    {item.productDescription}
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-3">
                     Viewed {format(new Date(item.viewedAt), 'MMM dd, yyyy')}
                   </p>
-                  <Button asChild className="w-full">
-                    <Link to={`/product/${item.productId}`}>
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      View Product
-                    </Link>
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button asChild className="flex-1">
+                      <Link to={`/product/${item.productId}`}>
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        View Details
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
               </Card>
             ))}
