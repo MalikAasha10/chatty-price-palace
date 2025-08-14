@@ -105,13 +105,25 @@ const UserProfile = () => {
 
     try {
       setOrderLoading(true);
-      const response = await axios.get(`/api/users/${userData._id}/orders`, {
+      const response = await axios.get('/api/orders', {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      if (response.data.success) {
-        setOrders(response.data.data);
-      }
+      // Transform the real order data to match the interface
+      const transformedOrders = response.data.map((order: any) => ({
+        id: order._id,
+        date: new Date(order.createdAt).toLocaleDateString(),
+        status: order.status,
+        total: order.totalAmount,
+        items: order.items.map((item: any) => ({
+          id: item._id,
+          name: item.productId?.title || 'Unknown Product',
+          price: item.finalPrice,
+          quantity: item.quantity
+        }))
+      }));
+
+      setOrders(transformedOrders);
     } catch (err) {
       toast({
         title: "Error",

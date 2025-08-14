@@ -113,9 +113,6 @@ const Navbar = () => {
             <Link to="/categories" className="text-gray-700 hover:text-brand-500 transition-colors">
               Categories
             </Link>
-            <Link to="/deals" className="text-gray-700 hover:text-brand-500 transition-colors">
-              Deals
-            </Link>
 
             {isLoggedIn ? (
               <>
@@ -234,9 +231,6 @@ const Navbar = () => {
           <div className="flex flex-col space-y-3">
             <Link to="/categories" className="text-gray-700 py-2 border-b border-gray-100">
               Categories
-            </Link>
-            <Link to="/deals" className="text-gray-700 py-2 border-b border-gray-100">
-              Deals
             </Link>
             {isLoggedIn ? (
               <>

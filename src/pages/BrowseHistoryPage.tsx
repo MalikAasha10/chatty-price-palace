@@ -36,7 +36,7 @@ const BrowseHistoryPage = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        const userId = userResponse.data?._id;
+        const userId = userResponse.data?.user?._id || userResponse.data?._id;
         if (!userId) {
           setError('Unable to get user information');
           return;

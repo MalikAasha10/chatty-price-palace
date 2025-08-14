@@ -26,13 +26,9 @@ const UserDashboard = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        // Handle the backend response format
-        if (response.data.success && Array.isArray(response.data.data)) {
-          const orders = response.data.data.slice(0, 5);
-          setRecentOrders(orders);
-        } else {
-          setRecentOrders([]);
-        }
+        // Handle the backend response format - response.data is already an array
+        const orders = Array.isArray(response.data) ? response.data.slice(0, 5) : [];
+        setRecentOrders(orders);
       } catch (err) {
         console.error('Failed to fetch orders:', err);
         setRecentOrders([]);
