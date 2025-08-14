@@ -193,8 +193,7 @@ const Index = () => {
               {categories.map(category => (
                 <Link 
                   key={category.id}
-                  to={`/categories`}
-                  state={{ selectedCategory: category.name }}
+                  to={`/categories?category=${encodeURIComponent(category.name)}`}
                   className="flex flex-col items-center p-4 rounded-lg transition-all hover:shadow-md"
                 >
                   <div className={`text-4xl p-4 rounded-full mb-3 ${category.color}`}>

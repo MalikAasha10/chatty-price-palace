@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
@@ -74,10 +74,19 @@ const categoriesData = [
 
 
 const CategoriesPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('featured');
+
+  // Initialize selectedCategory from URL params
+  useEffect(() => {
+    const categoryParam = searchParams.get('category');
+    if (categoryParam) {
+      setSelectedCategory(categoryParam);
+    }
+  }, [searchParams]);
 
   // Fetch products using the API
   const { data: productsData, isLoading, error } = useQuery({
@@ -125,6 +134,7 @@ const CategoriesPage = () => {
     setSelectedCategory(null);
     setSelectedSubcategory(null);
     setSearchQuery('');
+    setSearchParams({});
   };
 
   return (
@@ -151,7 +161,10 @@ const CategoriesPage = () => {
                 <button
                   key={category.id}
                   className="flex flex-col items-center p-6 rounded-lg transition-all hover:shadow-md border"
-                  onClick={() => setSelectedCategory(category.name)}
+                  onClick={() => {
+                    setSelectedCategory(category.name);
+                    setSearchParams({ category: category.name });
+                  }}
                 >
                   <div className={`text-4xl p-4 rounded-full mb-3 ${category.color}`}>
                     {category.icon}
@@ -175,6 +188,7 @@ const CategoriesPage = () => {
                       onClick={() => {
                         setSelectedCategory(null);
                         setSelectedSubcategory(null);
+                        setSearchParams({});
                       }}
                       className="ml-1 text-gray-500 hover:text-gray-700"
                     >
@@ -205,6 +219,7 @@ const CategoriesPage = () => {
                 onValueChange={(value) => {
                   setSelectedCategory(value);
                   setSelectedSubcategory(null);
+                  setSearchParams({ category: value });
                 }}
               >
                 <SelectTrigger>
