@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import SearchInput from '@/components/SearchInput';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { 
   ShoppingCart, 
-  Search, 
   User, 
   Menu,
   X,
@@ -91,20 +90,7 @@ const Navbar = () => {
 
           {/* Search bar - hidden on mobile */}
           <div className="hidden md:flex flex-1 px-6 max-w-xl">
-            <div className="relative w-full">
-              <Input
-                type="text"
-                placeholder="Search products..."
-                className="w-full rounded-lg border border-gray-300"
-              />
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="absolute right-0 top-0 h-full"
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
+            <SearchInput />
           </div>
 
           {/* Desktop Navigation */}
@@ -206,20 +192,7 @@ const Navbar = () => {
         {/* Mobile Search - visible when menu is closed */}
         {!isMenuOpen && (
           <div className="mt-3 md:hidden">
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder="Search products..."
-                className="w-full rounded-lg"
-              />
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="absolute right-0 top-0 h-full"
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
+            <SearchInput />
           </div>
         )}
       </div>

@@ -87,45 +87,80 @@ const Index = () => {
       <Navbar />
 
       <main className="flex-grow">
-        {/* Hero Section */}
-        <section className="relative">
-          <div 
-            className={`relative h-96 md:h-[500px] overflow-hidden bg-gradient-to-r ${currentBanner.bgColor}`}
-          >
-            <div 
-              className="absolute inset-0 bg-cover bg-center opacity-30 transition-opacity duration-1000"
-              style={{ backgroundImage: `url(${currentBanner.bgImage})` }}
-            ></div>
-
-            <div className="container mx-auto px-4 h-full flex items-center">
-              <div className="max-w-xl text-white space-y-6 animate-slide-up">
-                <div>
-                  <h2 className="text-lg md:text-xl font-medium">{currentBanner.subtitle}</h2>
-                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mt-2">{currentBanner.title}</h1>
-                </div>
-                <p className="text-lg opacity-90">{currentBanner.description}</p>
-                <div>
-                  <Link to={currentBanner.ctaLink}>
-                    <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100">
-                      {currentBanner.ctaText}
-                    </Button>
-                  </Link>
-                </div>
-              </div>
+        {/* Hero Product Carousel */}
+        <section className="relative bg-gradient-to-r from-brand-700 to-brand-900 py-16">
+          <div className="container mx-auto px-4">
+            <div className="text-center text-white mb-12">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
+                Discover Amazing Products
+              </h1>
+              <p className="text-lg md:text-xl opacity-90 max-w-2xl mx-auto">
+                Negotiate prices directly with sellers and get the best deals on quality products
+              </p>
             </div>
 
-            {/* Dots for hero banner */}
-            <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-2">
-              {heroBanners.map((banner, index) => (
-                <button
-                  key={banner.id}
-                  onClick={() => setCurrentBannerIndex(index)}
-                  className={`h-2.5 rounded-full transition-all ${
-                    index === currentBannerIndex ? 'w-8 bg-white' : 'w-2.5 bg-white/50'
-                  }`}
-                  aria-label={`Go to slide ${index + 1}`}
-                ></button>
-              ))}
+            {/* Product Carousel */}
+            <div className="relative">
+              {isLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {Array.from({length: 4}).map((_, i) => (
+                    <div key={i} className="animate-pulse bg-white/10 rounded-lg h-80"></div>
+                  ))}
+                </div>
+              ) : featuredProducts.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {featuredProducts.slice(0, 8).map((product) => (
+                    <Link 
+                      key={product.id} 
+                      to={`/product/${product.id}`}
+                      className="group bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                    >
+                      <div className="aspect-square overflow-hidden">
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-semibold text-lg mb-2 line-clamp-2 text-gray-900">
+                          {product.name}
+                        </h3>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl font-bold text-brand-600">
+                              ${product.price}
+                            </span>
+                            {product.originalPrice && (
+                              <span className="text-sm text-gray-500 line-through">
+                                ${product.originalPrice}
+                              </span>
+                            )}
+                          </div>
+                          {product.isBargainable && (
+                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                              Bargainable
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">{product.category}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-white py-12">
+                  <p className="text-lg opacity-90">No featured products available at the moment.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="text-center mt-8">
+              <Link to="/categories">
+                <Button size="lg" className="bg-white text-brand-600 hover:bg-gray-100">
+                  Browse All Products
+                </Button>
+              </Link>
             </div>
           </div>
         </section>
